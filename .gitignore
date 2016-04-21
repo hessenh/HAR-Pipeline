@@ -6,6 +6,8 @@
 .ipynb_checkpoints/
 
 
+/DATA
+
 # Python compiled files
 *.pyc
 
