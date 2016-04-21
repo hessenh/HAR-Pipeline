@@ -1,0 +1,23 @@
+*
+!/**/
+!*.*
+
+# Pandas checkpoint files
+.ipynb_checkpoints/
+
+
+# Python compiled files
+*.pyc
+
+
+# SVG
+*.svg
+
+# CSV files
+*.csv
+
+# Tensorflow checkpoint files
+*.ckpt
+
+# Sklearn models
+.pkl
