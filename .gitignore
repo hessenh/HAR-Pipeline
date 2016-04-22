@@ -6,11 +6,11 @@
 .ipynb_checkpoints/
 
 
-/DATA/TRAINING
-/DATA/TESTING
+
 
 # Python compiled files
 *.pyc
+
 
 
 # SVG
