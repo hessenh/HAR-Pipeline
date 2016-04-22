@@ -13,7 +13,7 @@ def main():
 
   ''' Load training data '''
   # Input: Testing, generate new windows, oversampling, viterbi training
-  #data_set = get_data_set(False, False, True, False)
+  #data_set = get_data_set(False, True, True, False)
   #data_set.shuffle_data_set()
 
   ''' Create network '''

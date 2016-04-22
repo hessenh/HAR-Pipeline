@@ -17,20 +17,20 @@ def main():
 	''' Load test data '''
 	# Input: Testing, generate new windows, oversampling, viterbi training
 	TESTING = True
-	GENERATE_NEW_WINDOWS = True
+	GENERATE_NEW_WINDOWS = False
 	OVERSAMPLING = False
 	VITERBI = False
 	#data_set = get_data_set(TESTING, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
 
 	''' Create network '''
-	#cnn = Convolutional_Neural_Network()
+	cnn = Convolutional_Neural_Network()
 	#cnn.set_data_set(data_set)
  	#cnn.load_model()
  	
  	''''''
 	#actual = data_set._labels
 	#cnn_result = cnn.get_predictions()
-	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	#https://appear.in/hans-funny3dprintcnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 	#viterbi_result = run_viterbi()
 	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
@@ -49,7 +49,7 @@ def main():
 	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 
-	#print get_score(result)
+	print get_score(result)
 
 
 	visualize(result)
@@ -97,36 +97,45 @@ def get_score(result_matrix):
 
 
 def visualize(result_matrix):
-	start = 0
-	stop = 100
-	actual = result_matrix[:,0]
-	cnn = result_matrix[:,1]
-	viterbi = result_matrix[:,2]
+	for i in range(0,len(result_matrix)):
+		result_matrix[i][0] =  V.VISUALIZATION_CONVERTION[result_matrix[i][0]+1]
+		result_matrix[i][1] =  V.VISUALIZATION_CONVERTION[result_matrix[i][1]+1]
+		result_matrix[i][2] =  V.VISUALIZATION_CONVERTION[result_matrix[i][2]+1]
+
+	start = 7000
+	stop = start + 1000
+	actual = result_matrix[:,0][start:stop]
+	cnn = result_matrix[:,1][start:stop]
+	viterbi = result_matrix[:,2][start:stop]
 
 
 	t = cnn != viterbi
-	actual = actual[t]
-	cnn = cnn[t]
-	viterbi = viterbi[t]
+	#actual = actual[t]
+	#cnn = cnn[t]
+	#viterbi = viterbi[t]
 
-
+	y_values = ["Lying", "Sit", "Stand", "Walk", "Walk(up)", "Walk(down)", "Cycle (sit)", "Cycle(Stand)", "Bending", "Running"]
+	y_axis = np.arange(1,11,1)
 
 	plt.figure(1)
 
 	plt.subplot(311)
 	axes = plt.gca()
-	axes.set_ylim([0.9,13.4])
+	axes.set_ylim([0.9,10.4])
+	plt.yticks(y_axis, y_values)
 	plt.plot(actual)
 
 	plt.subplot(312)
 	axes = plt.gca()
-	axes.set_ylim([0.9,13.4])
+	axes.set_ylim([0.9,10.4])
+	plt.yticks(y_axis, y_values)
 	plt.plot(cnn)
 
 
 	plt.subplot(313)
 	axes = plt.gca()
-	axes.set_ylim([0.9,13.4])
+	axes.set_ylim([0.9,10.4])
+	plt.yticks(y_axis, y_values)
 	plt.plot(viterbi)
 	plt.show()
 
