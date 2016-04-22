@@ -6,7 +6,8 @@
 .ipynb_checkpoints/
 
 
-/DATA
+/DATA/TRAINING
+/DATA/TESTING
 
 # Python compiled files
 *.pyc
