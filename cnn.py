@@ -32,11 +32,11 @@ class Convolutional_Neural_Network(object):
 
     '''Placeholders for input and output'''
     self.x = tf.placeholder("float", shape=[None, self._input_size])
-    print self.x.get_shape(),'Input' 
+    #print self.x.get_shape(),'Input' 
     self.y_ = tf.placeholder("float", shape=[None, self._output_size])
-    print self.y_.get_shape(), 'Output'
+    #print self.y_.get_shape(), 'Output'
     self.reshaped_input = tf.reshape(self.x, [-1, resize_y, resize_x, 1])
-    print self.reshaped_input.get_shape(), 'Input reshaped'
+    #print self.reshaped_input.get_shape(), 'Input reshaped'
 
 
     def get_conv_layer(input_variables, number_kernels_in, number_kernels_out, layer_number, filter_x, filter_y, filter_type):
@@ -49,11 +49,11 @@ class Convolutional_Neural_Network(object):
     def connect_conv_layers(input_variables):
       
       output = get_conv_layer(input_variables, kernel_list[0], kernel_list[1], '1', filter_x, filter_y, FILTER_TYPE)
-      print output.get_shape(), 'Features 1'
+      #print output.get_shape(), 'Features 1'
       
       for i in range(1,len(kernel_list)-1):
         output = get_conv_layer(output, kernel_list[i], kernel_list[i+1], str(i+1), filter_x, filter_y, FILTER_TYPE)
-        print output.get_shape(), 'Features ', i+1
+        #print output.get_shape(), 'Features ', i+1
 
       # Flatten output
       output = tf.reshape(output, [-1, resize_y * (resize_x - (number_of_kernels*filter_x) + number_of_kernels) * kernel_list[-1]])
@@ -69,7 +69,7 @@ class Convolutional_Neural_Network(object):
 
     def connect_nn_layers(input_variables, keep_prob):
       output = get_nn_layer(input_variables, neural_list[0], neural_list[1],0)
-      print output.get_shape(), 'NN',0
+      #print output.get_shape(), 'NN',0
       for i in range(1, len(neural_list)-2):
         output = get_nn_layer(output, neural_list[i], neural_list[i+1], i)
         print output.get_shape(),'NN',i

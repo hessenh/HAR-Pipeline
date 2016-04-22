@@ -3,6 +3,7 @@ from cnn import Convolutional_Neural_Network
 from viterbi import run_viterbi
 import numpy as np
 import TRAINING_VARIABLES
+import pandas as pd
 
 V = TRAINING_VARIABLES.VARS()
 
@@ -24,10 +25,12 @@ def main():
  	
  	''''''
 	actual = data_set._labels
-	cnn_result = cnn.get_predictions()
+	#cnn_result = cnn.get_predictions()
+	cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+
 	viterbi_result = run_viterbi()
-
-
+	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	
 	''' Add results in array with actual label'''
 	result = np.zeros((len(cnn_result), 3))
 	for i in range(0,len(cnn_result)):
@@ -36,15 +39,48 @@ def main():
 		v = viterbi_result[i]-1
 		result[i] = [a,c,v]
 
-	cnn_score = 0.0
-	viterbi_score = 0.0
-	for i in range(0, len(result)):
-		if result[i][0] == result[i][1]:
-			cnn_score +=1.0
-		if result[i][0] == result[i][2]:
-			viterbi_score += 1.0
-	print cnn_score/len(result), viterbi_score/len(result)
+	print get_score(result)
 
+
+def get_score(result_matrix):
+	activities = V.ACTIVITIES
+	'''TP / (FP - TP)
+	Correctly classified walking / Classified as walking
+	'''
+	TP = np.zeros(len(activities))
+	TN = np.zeros(len(activities))
+
+	FP_TP = np.zeros(len(activities))
+	TP_FN = np.zeros(len(activities))
+	FP_TN = np.zeros(len(activities))
+	
+	actual = result_matrix[:,0]
+	predicted = result_matrix[:,2]
+
+
+
+	for activity in activities:
+		''' FP - TP'''
+		FP_TP[activity-1] = np.sum(predicted == activity) #len(df[df[0]==activity])
+		''' TP - FN '''
+		TP_FN[activity-1] = np.sum(actual == activity) #len(df_actual[df_actual[0]==activity])
+		''' FP - TN '''
+		FP_TN[activity-1] = np.sum(actual != activity)#len(df_actual[df_actual[0] != activity])
+
+	for i in range(0, len(predicted)):
+		if predicted[i] == actual[i]:
+			TP[actual[i]-1] += 1.0
+		
+		for activity in activities:
+			if actual[i] != activity and predicted[i]  != activity:
+				TN[activity-1] += 1.0
+				
+
+	accuracy = sum(TP) / sum(TP_FN)
+	specificity = TN / FP_TN
+	precision = TP / FP_TP
+	recall = TP / TP_FN
+	return [accuracy, specificity, precision, recall]
 		
 if __name__ == "__main__":
     main()
