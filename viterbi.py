@@ -40,6 +40,8 @@ def run_viterbi():
 	(prob, state) = max((VITERBI_PATH[n][y], y) for y in states)
 	end_state = state
 
+
+	np.savetxt(V.VITERBI_RESULT_TESTING, path[state], delimiter=",")
 	return path[state]
 
 def load_obj(path):
@@ -71,7 +73,7 @@ def generate_emission_probability(observation_path, start_probability):
 def generate_start_probability():
 	start_probability = {}
 	for i in range(len(V.VITERBI_STATES)):
-		start_probability[V.VITERBI_STATES[i]] = np.log(1.0/len(V.ACTIVITIES))
+		start_probability[V.VITERBI_STATES[i]] = np.log(1/len(V.ACTIVITIES))
 	return start_probability
 
 def generate_transition_dictionary(transition):
