@@ -2,7 +2,6 @@ import pandas as pd
 import glob
 from os import listdir, makedirs
 from os.path import isfile, join, exists
-import windowing
 import numpy as np
 from collections import Counter
 from numpy.lib.stride_tricks import as_strided as ast
@@ -52,9 +51,9 @@ class DataSet(object):
 def main():
     get_data_set(False, False)
 
-def get_data_set(testing, generate_new_windows, oversampling):
+def get_data_set(testing, generate_new_windows, oversampling, viterbi):
     if generate_new_windows:
-        generate_windows(testing)
+        generate_windows(testing, viterbi)
 
     df_sensor, df_label = load_windows(testing, oversampling)
     data_set = DataSet(df_sensor, df_label)
@@ -139,7 +138,7 @@ def load_windows(testing, oversampling):
 
 
 
-def generate_windows(testing):
+def generate_windows(testing, viterbi):
     # List of subjects
     if testing:
         PATH = V.TESTING_PATH
@@ -160,7 +159,8 @@ def generate_windows(testing):
         df_label = load_dataframe(SUBJECT_PATH + '/' +SUBJECT_FILES_DICTIONARY[V.LABEL])
 
         # Remove activities
-        df_sensor_1, df_sensor_2, df_label = remove_activities(df_sensor_1, df_sensor_2, df_label, V.REMOVE_ACTIVITIES)
+        if not viterbi:
+            df_sensor_1, df_sensor_2, df_label = remove_activities(df_sensor_1, df_sensor_2, df_label, V.REMOVE_ACTIVITIES)
 
         result_path =  SUBJECT_PATH + '/WINDOW/'
 
