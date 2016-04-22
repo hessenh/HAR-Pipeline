@@ -126,12 +126,12 @@ class Convolutional_Neural_Network(object):
     model_name = model_name[-1]
     all_vars = tf.all_variables()
     model_vars = [k for k in all_vars if k.name.startswith(model_name)]
-    tf.train.Saver(model_vars).restore(self.sess, model)
+    tf.train.Saver(model_vars).restore(self.sess, model + '.ckpt')
 
   def save_model(self):
     path = V.CNN_MODEL_PATH
     saver = tf.train.Saver()
-    save_path = saver.save(self.sess, path)
+    save_path = saver.save(self.sess, path + '.ckpt')
     print("Model saved in file: %s" % save_path)
 
 
