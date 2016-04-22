@@ -183,7 +183,10 @@ def find_most_common_label(l):
 
 def convert_label(l):
     n = np.zeros(V.NUMBER_OF_ACTIVITIES)
-    activity = V.CONVERTION[l]
+    if l in V.CONVERTION:
+        activity = V.CONVERTION[l]
+    else:
+        activity = 1
     n[activity-1] = 1.0
     return n
 
