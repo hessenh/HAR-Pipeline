@@ -27,7 +27,7 @@ def main():
   # Viterbi
 
   # Unshuffled data set
-  data_set = get_data_set(False, False, False, True)
+  data_set = get_data_set(False, True, False, True)
   cnn.load_model()
   # Data set and number of samples
   actual, predictions = cnn.get_viterbi_data(data_set, 19676) #16473
