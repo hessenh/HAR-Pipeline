@@ -27,15 +27,15 @@ def main():
   # Viterbi
 
   # Unshuffled data set
-  data_set = get_data_set(False, False, False)
-  cnn.load_model()
+  #data_set = get_data_set(False, False, False)
+  #cnn.load_model()
   # Data set and number of samples
   #actual, predictions = cnn.get_viterbi_data(data_set, 16473) #16473
 
   #np.savetxt(V.VITERBI_PREDICTION_PATH_TRAINING, predictions, delimiter=",")
   #np.savetxt(V.VITERBI_ACTUAL_PATH_TRAINING, actual, delimiter=",")
 
-  #generate_transition_matrix("combination")
+  generate_transition_matrix("BW")
 
 
 
