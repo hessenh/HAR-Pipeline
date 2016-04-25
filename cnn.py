@@ -183,14 +183,11 @@ class Convolutional_Neural_Network(object):
     if len(data_set._data) < number_of_samples:
       number_of_samples = len(data_set._data)
 
-    predictions = np.zeros((number_of_samples, len(V.ACTIVITIES)))
     actual = data_set._labels[0:number_of_samples]
     data_sensor = data_set._data[0:number_of_samples]
    
+    predictions = self.sess.run(self.y_conv, feed_dict={self.x: data_sensor,self.keep_prob:1.0})
 
-    for i in range(0, len(data_sensor)):
-      data_batch = data_sensor[i]
-      predictions[i] = self.sess.run(self.y_conv, feed_dict={self.x: [data_batch],self.keep_prob:1.0})
 
 
     return actual, predictions
@@ -199,14 +196,9 @@ class Convolutional_Neural_Network(object):
     
     length = len(self._data_set._data)
     
-    predictions = np.zeros((length,len(V.ACTIVITIES)))
 
-
-    for i in range(0, length):
-      data_batch = self._data_set._data[i]
-      predictions[i] = self.sess.run(self.y_conv, feed_dict={self.x: [data_batch],self.keep_prob:1.0})
-      if i % 100 == 0:
-        print str(i) + '/' + str(length)
+    data_batch = self._data_set._data
+    predictions = self.sess.run(self.y_conv, feed_dict={self.x: data_batch,self.keep_prob:1.0})
 
     np.savetxt(V.VITERBI_PREDICTION_PATH_TESTING, predictions, delimiter=",")
     return predictions

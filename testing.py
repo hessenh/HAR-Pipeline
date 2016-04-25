@@ -5,7 +5,7 @@ import numpy as np
 import TRAINING_VARIABLES
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import json
 
 
 V = TRAINING_VARIABLES.VARS()
@@ -23,14 +23,14 @@ def main():
 	#data_set = get_data_set(TESTING, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
 
 	''' Create network '''
-	cnn = Convolutional_Neural_Network()
+	#cnn = Convolutional_Neural_Network()
 	#cnn.set_data_set(data_set)
  	#cnn.load_model()
  	
  	''''''
 	#actual = data_set._labels
 	#cnn_result = cnn.get_predictions()
-	#https://appear.in/hans-funny3dprintcnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 	#viterbi_result = run_viterbi()
 	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
@@ -45,14 +45,42 @@ def main():
 	#	result[i] = [a,c,v]
 
 
+	
+
+
 	#np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
 	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 
-	print get_score(result)
+	statistics_json = produce_statistics_json(result)
+	
+	print statistics_json['RECALL']
+	
 
+	#visualize(result)
 
-	visualize(result)
+def produce_statistics_json(result):
+	score = get_score(result)
+
+	sensitivity = {}
+	precision = {}
+	recall = {}
+	for i in range(0, len(score[1])):
+		sensitivity[V.ACTIVITY_NAMES_CONVERTION[i+1]] = score[1][i]
+		precision[V.ACTIVITY_NAMES_CONVERTION[i+1]] = score[2][i]
+		recall[V.ACTIVITY_NAMES_CONVERTION[i+1]] = score[3][i]
+
+	statistics = {
+		'ACCURACY' : score[0],
+		'SENSITIVITY': sensitivity,
+		'PRECISION': precision,
+		'RECALL': recall
+	}
+	path = 'RESULTS/TEST_STATISTICS.json'
+	with open(path, "w") as outfile:
+		json.dump(statistics, outfile)
+	return statistics
+
 
 def get_score(result_matrix):
 	activities = V.ACTIVITIES
@@ -67,7 +95,7 @@ def get_score(result_matrix):
 	FP_TN = np.zeros(len(activities))
 	
 	actual = result_matrix[:,0]
-	predicted = result_matrix[:,2]
+	predicted = result_matrix[:,1]
 
 
 
