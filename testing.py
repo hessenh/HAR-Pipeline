@@ -30,30 +30,29 @@ def main():
  	''''''
 	#actual = data_set._labels
 	#cnn_result = cnn.get_predictions()
-	cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
-	viterbi_result = run_viterbi()
-	viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	#viterbi_result = run_viterbi()
+	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 	
-	print viterbi_result
 	''' Add results in array with actual label'''
-	result = np.zeros((len(cnn_result), 3))
-	for i in range(0,len(cnn_result)):
-		a = np.argmax(actual[i])
-		c = np.argmax(cnn_result[i])
-		v = viterbi_result[i]-1
-		result[i] = [a,c,v]
+	#result = np.zeros((len(cnn_result), 3))
+	#for i in range(0,len(cnn_result)):
+	#	a = np.argmax(actual[i])
+	#	c = np.argmax(cnn_result[i])
+	#	v = viterbi_result[i]-1
+	#	result[i] = [a,c,v]
 
 	
 
 
-	np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
+	#np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
 	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 
 	statistics_json = produce_statistics_json(result)
 	
-	print statistics_json['RECALL']
+	print statistics_json['ACCURACY']
 	
 
 	#visualize(result)
@@ -94,7 +93,7 @@ def get_score(result_matrix):
 	FP_TN = np.zeros(len(activities))
 	
 	actual = result_matrix[:,0]
-	predicted = result_matrix[:,1]
+	predicted = result_matrix[:,2]
 
 
 
