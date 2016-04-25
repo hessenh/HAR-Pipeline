@@ -20,39 +20,38 @@ def main():
 	GENERATE_NEW_WINDOWS = False
 	OVERSAMPLING = False
 	VITERBI = False
-	#data_set = get_data_set(TESTING, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
+	data_set = get_data_set(TESTING, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
 
 	''' Create network '''
-	#cnn = Convolutional_Neural_Network()
-	#cnn.set_data_set(data_set)
-	#cnn.load_model()
+	cnn = Convolutional_Neural_Network()
+	cnn.set_data_set(data_set)
+	cnn.load_model()
  	
  	''''''
-	#actual = data_set._labels
+	actual = data_set._labels
 	#cnn_result = cnn.get_predictions()
-	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 	#viterbi_result = run_viterbi()
-	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 	
 	''' Add results in array with actual label'''
-	#result = np.zeros((len(cnn_result), 3))
-	#for i in range(0,len(cnn_result)):
-	#	a = np.argmax(actual[i])
-	#	c = np.argmax(cnn_result[i])
-	#	v = viterbi_result[i]-1
-	#	result[i] = [a,c,v]
-
+	result = np.zeros((len(cnn_result), 3))
+	for i in range(0,len(cnn_result)):
+		a = np.argmax(actual[i])
+		c = np.argmax(cnn_result[i])
+		v = viterbi_result[i]-1
+		result[i] = [a,c,v]
 	
 
+	# Remove activities labelled as -100 - activites such as shuffling, transition ...
+	boolean_actual = np.invert(actual[:,0] == -100).T
+	result = result[boolean_actual]
 
-	#np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
+	np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
 	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
-
 	statistics_json = produce_statistics_json(result)
-	
-	print statistics_json['ACCURACY']
 	
 
 	#visualize(result)
@@ -128,8 +127,8 @@ def visualize(result_matrix):
 		result_matrix[i][1] =  V.VISUALIZATION_CONVERTION[result_matrix[i][1]+1]
 		result_matrix[i][2] =  V.VISUALIZATION_CONVERTION[result_matrix[i][2]+1]
 
-	start = 7000
-	stop = start + 1000
+	start = 0
+	stop = 1000
 	actual = result_matrix[:,0][start:stop]
 	cnn = result_matrix[:,1][start:stop]
 	viterbi = result_matrix[:,2][start:stop]
@@ -166,7 +165,47 @@ def visualize(result_matrix):
 	plt.show()
 
 
+def confusion_matrix(result_matrix, index):
 
+	for i in range(0,len(result_matrix)):
+		result_matrix[i][0] =  V.VISUALIZATION_CONVERTION[result_matrix[i][0]+1]
+		result_matrix[i][1] =  V.VISUALIZATION_CONVERTION[result_matrix[i][1]+1]
+		result_matrix[i][2] =  V.VISUALIZATION_CONVERTION[result_matrix[i][2]+1]
+
+
+	confusion_matrix = np.zeros((len(V.ACTIVITIES), len(V.ACTIVITIES)))
+	for i in range(0, len(result_matrix)):
+		actual = result_matrix[i][0]
+		predicted = result_matrix[i][index]
+		confusion_matrix[actual-1][predicted-1] += 1.0
+
+	row_sums = confusion_matrix.sum(axis=1)
+	norm_conf = confusion_matrix / row_sums[:, np.newaxis]
+
+
+	fig = plt.figure()
+	plt.clf()
+	ax = fig.add_subplot(111)
+	ax.set_aspect(1)
+	res = ax.imshow(np.array(norm_conf), cmap=plt.cm.summer, 
+	                interpolation='nearest')
+
+	width = len(confusion_matrix)
+	height = len(confusion_matrix[0])
+
+	for x in xrange(width):
+	    for y in xrange(height):
+	        ax.annotate(str(confusion_matrix[x][y]), xy=(y, x), 
+	                    horizontalalignment='center',
+	                    verticalalignment='center')
+
+	cb = fig.colorbar(res)
+
+	plt.title('Confusion Matrix')
+	labels = ['Lying', 'Sitting','Standing','Walking','Stairs (up)','Stairs (down)', 'Cycling (sit)','Cycling (stand)', 'Bending', 'Running']
+	plt.xticks(range(width), labels,rotation='vertical')
+	plt.yticks(range(height), labels)
+	plt.show()
 
 
 if __name__ == "__main__":

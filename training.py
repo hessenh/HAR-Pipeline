@@ -28,17 +28,17 @@ def main():
 
   # Unshuffled data set
   # Input: Testing, generate new windows, oversampling, viterbi training
-  data_set = get_data_set(False, True, False, True)
-  cnn.load_model()
+  #data_set = get_data_set(False, True, False, True)
+  #cnn.load_model()
   # Data set and number of samples
-  actual, predictions = cnn.get_viterbi_data(data_set, 19676) #16473
+  #actual, predictions = cnn.get_viterbi_data(data_set, 19676) #16473
 
-  np.savetxt(V.VITERBI_PREDICTION_PATH_TRAINING, predictions, delimiter=",")
-  np.savetxt(V.VITERBI_ACTUAL_PATH_TRAINING, actual, delimiter=",")
+  #np.savetxt(V.VITERBI_PREDICTION_PATH_TRAINING, predictions, delimiter=",")
+  #np.savetxt(V.VITERBI_ACTUAL_PATH_TRAINING, actual, delimiter=",")
 
-  generate_transition_matrix("BW")
+  generate_transition_matrix("combination")
 
-
+  print "Training finished"
 
 	
 
