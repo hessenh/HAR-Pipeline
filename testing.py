@@ -25,30 +25,29 @@ def main():
 	''' Create network '''
 	#cnn = Convolutional_Neural_Network()
 	#cnn.set_data_set(data_set)
- 	#cnn.load_model()
+	#cnn.load_model()
  	
  	''''''
 	#actual = data_set._labels
 	#cnn_result = cnn.get_predictions()
-	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
-	#viterbi_result = run_viterbi()
-	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	viterbi_result = run_viterbi()
+	viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 	
-
+	print viterbi_result
 	''' Add results in array with actual label'''
-	#result = np.zeros((len(cnn_result), 3))
-	#for i in range(0,len(cnn_result)):
-	#	a = np.argmax(actual[i])
-	#	c = np.argmax(cnn_result[i])
-	#	v = viterbi_result[i]-1
-	#	result[i] = [a,c,v]
-
+	result = np.zeros((len(cnn_result), 3))
+	for i in range(0,len(cnn_result)):
+		a = np.argmax(actual[i])
+		c = np.argmax(cnn_result[i])
+		v = viterbi_result[i]-1
+		result[i] = [a,c,v]
 
 	
 
 
-	#np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
+	np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
 	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
 
