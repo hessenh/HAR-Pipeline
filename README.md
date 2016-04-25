@@ -20,6 +20,7 @@ File descrtiption:
 
 - data.py. Loads the different data sets. Splits the raw signal into windows used in the network. 
 
+- TRAINING_VARIABLES. All variables used for training and testing. 
 
 ### Training and testing folders/files
 The data from each subject must be placed in a spesific folder under DATA/TRAINING/ or DATA/TESTING.<br />
@@ -54,5 +55,13 @@ Label format:  <br />
 6
 ...
 ```
-
-
+### Training
+In terminal:
+```
+python training.py
+```
+### Testing
+In terminal:
+```
+python testing.py
+```
