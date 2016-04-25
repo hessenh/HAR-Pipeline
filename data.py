@@ -165,11 +165,10 @@ def generate_windows(testing, viterbi):
         result_path =  SUBJECT_PATH + '/WINDOW/'
 
         # Create windows
-        if testing:
+        if testing or viterbi:
             overlap = V.TESTING_OVERLAP
         else:
             overlap = V.TRAINING_OVERLAP
-
 
         create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
         create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
