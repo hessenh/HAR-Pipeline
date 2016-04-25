@@ -184,9 +184,10 @@ def convert_label(l):
     n = np.zeros(V.NUMBER_OF_ACTIVITIES)
     if l in V.CONVERTION:
         activity = V.CONVERTION[l]
+        n[activity-1] = 1.0
     else:
         activity = 1
-    n[activity-1] = 1.0
+        n[activity-1] = -100
     return n
 
 

@@ -143,7 +143,8 @@ class Convolutional_Neural_Network(object):
     for i in range(self._iteration_size):
       batch = self._data_set.next_batch(self._batch_size)
       self.sess.run(self.train_step, feed_dict={self.x: batch[0], self.y_: batch[1], self.keep_prob: 0.5})
-  
+
+
   def get_accuracy(self):
     activities = V.ACTIVITIES
 
@@ -185,8 +186,14 @@ class Convolutional_Neural_Network(object):
 
     actual = data_set._labels[0:number_of_samples]
     data_sensor = data_set._data[0:number_of_samples]
-   
+    
+    predictions = np.zeros((len(data_sensor), len(V.ACTIVITIES)))
     predictions = self.sess.run(self.y_conv, feed_dict={self.x: data_sensor,self.keep_prob:1.0})
+    #memory = 10
+    #length_of_temp_step = len(predictions) / memory
+    #for i in range(0, memory):
+    #  data_batch = data_sensor[i*length_of_temp_step:i*length_of_temp_step+length_of_temp_step]
+    #  predictions[i*length_of_temp_step:i*length_of_temp_step+length_of_temp_step] = self.sess.run(self.y_conv, feed_dict={self.x: data_batch,self.keep_prob:1.0})
 
 
 
