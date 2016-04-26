@@ -14,6 +14,8 @@ File descrtiption:
 
 - testing.py. Runs the data located in DATA/TESTING through the Convolutional Neural Network and the Viterbi model. Saves the predictions and statistics in the folder RESULTS/
 
+- predicting.py. Predicting unlabelled data. Saves the prediction in RESULTS/RESULT_PREDICTING.py
+
 - cnn.py. Covolutional Neural Network, used both for training and testing. Configuration is done via the TRAINING_VARIABLES.py file. 
 
 - viterbi.py. Viterbi, used both for training and testing.
@@ -32,6 +34,8 @@ Example:
 - DATA/TRAINING/A01/01A_Axivity_THIGH_Right.csv
 - DATA/TRAINING/A01/01A_GoPro_LAB_All.csv
 
+### Predicting folders/files
+Same structure as training and testing (explained over), but without annotation file (01A_GoPro_LAB_All.csv).
 
 ### Data structure
 The training and testing data need to be in a spesific format.  <br />
