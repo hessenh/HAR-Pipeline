@@ -24,3 +24,5 @@
 
 # Sklearn models
 *.pkl
+
+*.json
