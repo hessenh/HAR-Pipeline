@@ -206,6 +206,4 @@ class Convolutional_Neural_Network(object):
 
     data_batch = self._data_set._data
     predictions = self.sess.run(self.y_conv, feed_dict={self.x: data_batch,self.keep_prob:1.0})
-
-    np.savetxt(V.VITERBI_PREDICTION_PATH_TESTING, predictions, delimiter=",")
     return predictions
