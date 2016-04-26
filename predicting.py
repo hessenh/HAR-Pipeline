@@ -27,12 +27,10 @@ def main():
  	
  	''''''
 	cnn_result = cnn.get_predictions()
-	#np.savetxt(V.VITERBI_PREDICTION_PATH_PREDICTING, cnn_result, delimiter=",")
-	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_PREDICTING, header=None, sep='\,',engine='python').as_matrix()
+
 
 	viterbi_result = run_viterbi()
-	#np.savetxt(V.VITERBI_RESULT_PREDICTING, viterbi_result, delimiter=",")
-	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_PREDICTING, header=None, sep='\,',engine='python').as_matrix()
+
 	print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
 
 def produce_statistics_json(result):
