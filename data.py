@@ -49,27 +49,32 @@ class DataSet(object):
 
 
 def main():
-    get_data_set(False, False)
+    get_data_set("testing", False, False, False)
 
-def get_data_set(testing, generate_new_windows, oversampling, viterbi):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi):
     if generate_new_windows:
-        generate_windows(testing, viterbi)
+        generate_windows(data_type, viterbi)
 
-    df_sensor, df_label = load_windows(testing, oversampling)
+    df_sensor, df_label = load_windows(data_type, oversampling)
     data_set = DataSet(df_sensor, df_label)
 
     return data_set
 
-def load_windows(testing, oversampling):
-    if testing:
+def load_windows(data_type, oversampling):
+    df_sensor = None
+    df_label = None
+
+
+    if data_type == "testing":
         PATH = V.TESTING_PATH
         
-    else:
+    elif data_type == "training":
         PATH = V.TRAINING_PATH
+    elif data_type == "predicting":
+        PATH = V.PREDICTING_PATH
 
     SUBJECT_LIST = get_folder_names(PATH)    
 
-    #SUBJECT_LIST = SUBJECT_LIST[0:1]
 
     # If subject list is empy - alert
     if len(SUBJECT_LIST) == 0:
@@ -82,20 +87,23 @@ def load_windows(testing, oversampling):
         path = PATH +'/' + SUBJECT+ '/WINDOW/'
 
         df_sensor_temp = load_dataframe(path + 'SENSORS.csv')
-        df_label_temp = pd.read_csv(path + 'LABEL.csv', header=None, sep=',')
+        if data_type != "predicting":
+            df_label_temp = pd.read_csv(path + 'LABEL.csv', header=None, sep=',')
        
 
         if first_iteration:
             df_sensor = df_sensor_temp.as_matrix()
-            df_label = df_label_temp.as_matrix()
+            if data_type != "predicting":
+                df_label = df_label_temp.as_matrix()
             first_iteration = False
         else:
             df_sensor = np.concatenate((df_sensor,df_sensor_temp ), axis=0)
-            df_label = np.concatenate((df_label, df_label_temp), axis=0)
+            if data_type != "predicting":
+                df_label = np.concatenate((df_label, df_label_temp), axis=0)
 
 
 
-    if oversampling and not testing:
+    if data_type == "training" and oversampling:
         print 'OVERSAMPLING'
         data_sensor = df_sensor
         data_label = df_label
@@ -138,12 +146,15 @@ def load_windows(testing, oversampling):
 
 
 
-def generate_windows(testing, viterbi):
+def generate_windows(data_type, viterbi):
     # List of subjects
-    if testing:
+    if data_type == "testing":
         PATH = V.TESTING_PATH
-    else:
+        
+    elif data_type == "training":
         PATH = V.TRAINING_PATH
+    elif data_type == "predicting":
+        PATH = V.PREDICTING_PATH
 
     SUBJECT_LIST = get_folder_names(PATH)
 
@@ -165,9 +176,11 @@ def generate_windows(testing, viterbi):
         result_path =  SUBJECT_PATH + '/WINDOW/'
 
         # Create windows
-        if testing or viterbi:
+        if data_type == "testing" or viterbi:
             overlap = V.TESTING_OVERLAP
-        else:
+        elif data_type == "predicting":
+            overlap = V.PREDICTING_OVERLAP
+        elif data_type == "training":
             overlap = V.TRAINING_OVERLAP
 
         create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)

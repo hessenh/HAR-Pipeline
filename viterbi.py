@@ -40,8 +40,6 @@ def run_viterbi():
 	(prob, state) = max((VITERBI_PATH[n][y], y) for y in states)
 	end_state = state
 
-
-	np.savetxt(V.VITERBI_RESULT_TESTING, path[state], delimiter=",")
 	return path[state]
 
 def load_obj(path):

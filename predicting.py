@@ -12,11 +12,9 @@ V = TRAINING_VARIABLES.VARS()
 
 
 def main():
-	
-
 	''' Load test data '''
 	# Input: Testing, generate new windows, oversampling, viterbi training
-	DATA_TYPE = "testing"
+	DATA_TYPE = "predicting"
 	GENERATE_NEW_WINDOWS = False
 	OVERSAMPLING = False
 	VITERBI = False
@@ -28,35 +26,14 @@ def main():
 	cnn.load_model()
  	
  	''''''
-	actual = data_set._labels
 	cnn_result = cnn.get_predictions()
-	np.savetxt(V.VITERBI_PREDICTION_PATH_TESTING, cnn_result, delimiter=",")
-	cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,',engine='python').as_matrix()
+	#np.savetxt(V.VITERBI_PREDICTION_PATH_PREDICTING, cnn_result, delimiter=",")
+	#cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_PREDICTING, header=None, sep='\,',engine='python').as_matrix()
 
 	viterbi_result = run_viterbi()
-	np.savetxt(V.VITERBI_RESULT_TESTING, viterbi_result, delimiter=",")
-	viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
-	
-	''' Add results in array with actual label'''
-	result = np.zeros((len(cnn_result), 3))
-	for i in range(0,len(cnn_result)):
-		a = np.argmax(actual[i])
-		c = np.argmax(cnn_result[i])
-		v = viterbi_result[i]-1
-		result[i] = [a,c,v]
-	
-
-	# Remove activities labelled as -100 - activites such as shuffling, transition ...
-	boolean_actual = np.invert(actual[:,0] == -100).T
-	result = result[boolean_actual]
-
-	np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
-	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
-
-	statistics_json = produce_statistics_json(result)
-	
-
-	#visualize(result)
+	#np.savetxt(V.VITERBI_RESULT_PREDICTING, viterbi_result, delimiter=",")
+	#viterbi_result = pd.read_csv(V.VITERBI_RESULT_PREDICTING, header=None, sep='\,',engine='python').as_matrix()
+	print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
 
 def produce_statistics_json(result):
 	score = get_score(result)
@@ -75,7 +52,7 @@ def produce_statistics_json(result):
 		'PRECISION': precision,
 		'RECALL': recall
 	}
-	path = V.RESULT_TESTING_JSON
+	path = 'RESULTS/TEST_STATISTICS.json'
 	with open(path, "w") as outfile:
 		json.dump(statistics, outfile)
 	return statistics
