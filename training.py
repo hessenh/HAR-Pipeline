@@ -23,10 +23,8 @@ def main():
   ''' Create network '''
   cnn = Convolutional_Neural_Network()
   cnn.set_data_set(data_set)
-  #cnn.train_network()
-  #cnn.save_model()
-
-
+  cnn.train_network()
+  cnn.save_model()
 
   # Viterbi
 
@@ -39,7 +37,7 @@ def main():
   data_set = get_data_set("training", True, False, True)
   cnn.load_model()
   # Data set and number of samples
-  actual, predictions = cnn.get_viterbi_data(data_set, 19676) #16473
+  actual, predictions = cnn.get_viterbi_data(data_set, V.VITERBI_LENGTH_OF_TRANSITION_DATA)
 
   np.savetxt(V.VITERBI_PREDICTION_PATH_TRAINING, predictions, delimiter=",")
   np.savetxt(V.VITERBI_ACTUAL_PATH_TRAINING, actual, delimiter=",")

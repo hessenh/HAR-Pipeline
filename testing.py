@@ -46,17 +46,16 @@ def main():
 		result[i] = [a,c,v]
 	
 
-	# Remove activities labelled as -100 - activites such as shuffling, transition ...
+	# Remove activities labelled as -100 - activites such as shuffling, transition ... See data.py
 	boolean_actual = np.invert(actual[:,0] == -100).T
 	result = result[boolean_actual]
 
 	np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
 	result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,',engine='python').as_matrix()
 
-	statistics_json = produce_statistics_json(result)
-	
+	produce_statistics_json(result)
 
-	#visualize(result)
+	visualize(result)
 
 def produce_statistics_json(result):
 	score = get_score(result)
@@ -94,25 +93,25 @@ def get_score(result_matrix):
 	FP_TN = np.zeros(len(activities))
 	
 	actual = result_matrix[:,0]
-	predicted = result_matrix[:,2]
+	predicted = result_matrix[:,1]
 
 
 
 	for activity in activities:
 		''' FP - TP'''
-		FP_TP[activity-1] = np.sum(predicted == activity) #len(df[df[0]==activity])
+		FP_TP[activity] = np.sum(predicted == activity) #len(df[df[0]==activity])
 		''' TP - FN '''
-		TP_FN[activity-1] = np.sum(actual == activity) #len(df_actual[df_actual[0]==activity])
+		TP_FN[activity] = np.sum(actual == activity) #len(df_actual[df_actual[0]==activity])
 		''' FP - TN '''
-		FP_TN[activity-1] = np.sum(actual != activity)#len(df_actual[df_actual[0] != activity])
+		FP_TN[activity] = np.sum(actual != activity)#len(df_actual[df_actual[0] != activity])
 
 	for i in range(0, len(predicted)):
 		if predicted[i] == actual[i]:
-			TP[actual[i]-1] += 1.0
+			TP[actual[i]] += 1.0
 		
 		for activity in activities:
 			if actual[i] != activity and predicted[i]  != activity:
-				TN[activity-1] += 1.0
+				TN[activity] += 1.0
 				
 
 	accuracy = sum(TP) / sum(TP_FN)
