@@ -15,7 +15,7 @@ def main():
 	''' Load test data '''
 	# Input: Testing, generate new windows, oversampling, viterbi training
 	DATA_TYPE = "predicting"
-	GENERATE_NEW_WINDOWS = False
+	GENERATE_NEW_WINDOWS = True
 	OVERSAMPLING = False
 	VITERBI = False
 	data_set = get_data_set(DATA_TYPE, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
