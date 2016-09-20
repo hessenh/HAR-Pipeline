@@ -3,7 +3,6 @@ from cnn import Convolutional_Neural_Network
 from viterbi import run_viterbi
 import numpy as np
 import TRAINING_VARIABLES
-import pandas as pd
 import matplotlib.pyplot as plt
 import json
 
