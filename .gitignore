@@ -5,13 +5,8 @@
 # Pandas checkpoint files
 .ipynb_checkpoints/
 
-
-
-
 # Python compiled files
 *.pyc
-
-
 
 # SVG
 *.svg
@@ -71,3 +66,6 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# Added by Eirik on 2016-09-20
+/DATA/har/

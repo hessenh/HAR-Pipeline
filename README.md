@@ -7,8 +7,6 @@
   * [Tensorflow](https://www.tensorflow.org/versions/r0.8/get_started/os_setup.html)
   * [Pandas](https://pypi.python.org/pypi/pandas/0.18.0/#downloads)
 
-
-
 File descrtiption: 
 - training.py. Training both the Convolutional Neural Network and the Viterbi transition matrix. Use data located in DATA/TRAINING. 
 
