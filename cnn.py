@@ -5,7 +5,7 @@ import TRAINING_VARIABLES
 V = TRAINING_VARIABLES.VARS()
 
 
-class Convolutional_Neural_Network(object):
+class ConvolutionalNeuralNetwork(object):
     def __init__(self):
         self._info = "Convolutional neural network with two convolutional layers and a fully connected network"
 
