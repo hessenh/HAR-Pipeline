@@ -1,5 +1,6 @@
 class VARS(object):
     # Used to format a list when creating cnn model name
+    @staticmethod
     def format_list(list_input):
         string_list = ""
         for s in list_input:
@@ -29,8 +30,10 @@ class VARS(object):
     TESTING_PATH = 'DATA/TESTING'
     PREDICTING_PATH = 'DATA/PREDICTING'
 
-    # Name of sensors and label. This is how the system differentiate between the different files located in each subject folder.
-    # The back sensor file must have a word (e.g. "BACK") separated by two underscores ("_"). This word can be changed by altering the variables bellow (e.g. "CHEST").
+    # Name of sensors and label.
+    # This is how the system differentiates between the different files located in each subject folder.
+    # The back sensor file must have a word (e.g. "BACK") separated by two underscores ("_").
+    # This word can be changed by altering the variables bellow (e.g. "CHEST").
     SENSOR_1 = 'BACK'
     SENSOR_2 = 'THIGH'
     SENSORS = [SENSOR_1, SENSOR_2]
@@ -44,7 +47,7 @@ class VARS(object):
     CNN_OUTPUT_SIZE = 10
     # Number of training iterations. In our report, we have used 20000.
     CNN_NUMBER_OF_ITERATIONS = 20000
-    # Number of instanses used between changing training parameters
+    # Number of instances used between changing training parameters
     CNN_BATCH_SIZE = 100
     # Length of kernel in horizontal orientation
     CNN_FILTER_X = 30
@@ -63,7 +66,8 @@ class VARS(object):
     CNN_RESIZE_X - (CNN_NUMBER_OF_KERNELS * CNN_FILTER_X) + CNN_NUMBER_OF_KERNELS) * CNN_KERNEL_LIST[-1]
     CNN_NEURAL_LIST = [CNN_CONNECTIONS_INN] + [1500] + [CNN_OUTPUT_SIZE]
     CNN_FILTER_TYPE = 'VALID'
-    # This name is saved in all tensors throughout the model, meaning that this must be the same when creating and loading a model.
+    # This name is saved in all tensors throughout the model,
+    # meaning that this must be the same when creating and loading a model.
     CNN_MODEL_NAME = str(CNN_INPUT_SIZE) + '_' + "conv_" + format_list(CNN_KERNEL_LIST[1:]) + "neural_" + format_list(
         CNN_NEURAL_LIST[1:-1]) + CNN_FILTER_TYPE + '_' + str(CNN_NUMBER_OF_ITERATIONS)
     CNN_MODEL_PATH = 'MODELS/' + CNN_MODEL_NAME
