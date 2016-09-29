@@ -147,6 +147,8 @@ def generate_windows(data_type, viterbi):
 
     for SUBJECT in SUBJECT_LIST:
         print SUBJECT
+        if SUBJECT.startswith(".DS_Store"):
+            break
         SUBJECT_PATH = PATH + '/' + SUBJECT
 
         SUBJECT_FILES_DICTIONARY = get_subject_files_from_path(SUBJECT_PATH)
@@ -249,6 +251,8 @@ def remove_activities(df_back, df_thigh, df_label, remove_activity_list):
 
 
 def load_dataframe(PATH):
+    if ".DS_Store" in PATH:
+        return
     return pd.read_csv(PATH, header=None)
 
 
