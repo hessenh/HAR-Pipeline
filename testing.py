@@ -1,5 +1,5 @@
 from data import get_data_set
-from cnn import ConvolutionalNeuralNetwork
+from cnn import Convolutional_Neural_Network
 from viterbi import run_viterbi
 import numpy as np
 import TRAINING_VARIABLES
@@ -20,7 +20,7 @@ def main():
     data_set = get_data_set(DATA_TYPE, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
 
     ''' Create network '''
-    cnn = ConvolutionalNeuralNetwork()
+    cnn = Convolutional_Neural_Network()
     cnn.set_data_set(data_set)
     cnn.load_model()
 
@@ -51,7 +51,7 @@ def main():
 
     produce_statistics_json(result)
 
-    visualize(result)
+    # visualize(result)
 
 
 def produce_statistics_json(result):
@@ -61,9 +61,9 @@ def produce_statistics_json(result):
     precision = {}
     recall = {}
     for i in range(0, len(score[1])):
-        specificity[V.ACTIVITY_NAMES_CONVERSION[i + 1]] = score[1][i]
-        precision[V.ACTIVITY_NAMES_CONVERSION[i + 1]] = score[2][i]
-        recall[V.ACTIVITY_NAMES_CONVERSION[i + 1]] = score[3][i]
+        specificity[V.ACTIVITY_NAMES_CONVERTION[i + 1]] = score[1][i]
+        precision[V.ACTIVITY_NAMES_CONVERTION[i + 1]] = score[2][i]
+        recall[V.ACTIVITY_NAMES_CONVERTION[i + 1]] = score[3][i]
 
     statistics = {
         'ACCURACY': score[0],
@@ -117,9 +117,9 @@ def get_score(result_matrix):
 
 def visualize(result_matrix):
     for i in range(0, len(result_matrix)):
-        result_matrix[i][0] = V.VISUALIZATION_CONVERSION[result_matrix[i][0] + 1]
-        result_matrix[i][1] = V.VISUALIZATION_CONVERSION[result_matrix[i][1] + 1]
-        result_matrix[i][2] = V.VISUALIZATION_CONVERSION[result_matrix[i][2] + 1]
+        result_matrix[i][0] = V.VISUALIZATION_CONVERTION[result_matrix[i][0] + 1]
+        result_matrix[i][1] = V.VISUALIZATION_CONVERTION[result_matrix[i][1] + 1]
+        result_matrix[i][2] = V.VISUALIZATION_CONVERTION[result_matrix[i][2] + 1]
 
     start = 0
     stop = 1000
@@ -160,9 +160,9 @@ def visualize(result_matrix):
 
 def confusion_matrix(result_matrix, index):
     for i in range(0, len(result_matrix)):
-        result_matrix[i][0] = V.VISUALIZATION_CONVERSION[result_matrix[i][0] + 1]
-        result_matrix[i][1] = V.VISUALIZATION_CONVERSION[result_matrix[i][1] + 1]
-        result_matrix[i][2] = V.VISUALIZATION_CONVERSION[result_matrix[i][2] + 1]
+        result_matrix[i][0] = V.VISUALIZATION_CONVERTION[result_matrix[i][0] + 1]
+        result_matrix[i][1] = V.VISUALIZATION_CONVERTION[result_matrix[i][1] + 1]
+        result_matrix[i][2] = V.VISUALIZATION_CONVERTION[result_matrix[i][2] + 1]
 
     confusion_matrix = np.zeros((len(V.ACTIVITIES), len(V.ACTIVITIES)))
     for i in range(0, len(result_matrix)):

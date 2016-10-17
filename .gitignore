@@ -69,5 +69,4 @@ fabric.properties
 
 # Added by Eirik on 2016-09-20
 /DATA/har/
-/DATA/TRAINING/
-/DATA/TESTING/
+/private_data

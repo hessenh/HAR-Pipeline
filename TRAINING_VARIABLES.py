@@ -1,6 +1,5 @@
 class VARS(object):
     # Used to format a list when creating cnn model name
-    @staticmethod
     def format_list(list_input):
         string_list = ""
         for s in list_input:
@@ -8,10 +7,10 @@ class VARS(object):
         return string_list
 
     ''' Variables '''
-    # Conversion of activities
-    CONVERSION = {1: 1, 2: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 10: 8, 11: 8, 13: 9, 14: 10}
+    # Convertion of activities
+    CONVERTION = {1: 1, 2: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 10: 8, 11: 8, 13: 9, 14: 10}
     REMOVE_ACTIVITIES = [0, 3, 9, 11, 16, 12, 15, 17]
-    ACTIVITY_NAMES_CONVERSION = {1: 'WALKING', 2: 'RUNNING', 3: 'STAIRS (UP)', 4: 'STAIRS (DOWN)', 5: 'STANDING',
+    ACTIVITY_NAMES_CONVERTION = {1: 'WALKING', 2: 'RUNNING', 3: 'STAIRS (UP)', 4: 'STAIRS (DOWN)', 5: 'STANDING',
                                  6: 'SITTING', 7: 'LYING', 8: 'BENDING', 9: 'CYCLING (SITTING)',
                                  10: 'CYCLING (STANDING)'}
     ACTIVITIES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -31,9 +30,9 @@ class VARS(object):
     PREDICTING_PATH = 'DATA/PREDICTING'
 
     # Name of sensors and label.
-    # This is how the system differentiates between the different files located in each subject folder.
+    # This is how the system differentiate between the different files located in each subject folder.
     # The back sensor file must have a word (e.g. "BACK") separated by two underscores ("_").
-    # This word can be changed by altering the variables bellow (e.g. "CHEST").
+    # This word can be changed by altering the variables below (e.g. "CHEST").
     SENSOR_1 = 'BACK'
     SENSOR_2 = 'THIGH'
     SENSORS = [SENSOR_1, SENSOR_2]
@@ -47,7 +46,7 @@ class VARS(object):
     CNN_OUTPUT_SIZE = 10
     # Number of training iterations. In our report, we have used 20000.
     CNN_NUMBER_OF_ITERATIONS = 20000
-    # Number of instances used between changing training parameters
+    # Number of instanses used between changing training parameters
     CNN_BATCH_SIZE = 100
     # Length of kernel in horizontal orientation
     CNN_FILTER_X = 30
@@ -63,11 +62,10 @@ class VARS(object):
     CNN_NUMBER_OF_KERNELS = len(CNN_KERNEL_LIST) - 1
     # Not so easy to grasp, but..
     CNN_CONNECTIONS_INN = CNN_RESIZE_Y * (
-    CNN_RESIZE_X - (CNN_NUMBER_OF_KERNELS * CNN_FILTER_X) + CNN_NUMBER_OF_KERNELS) * CNN_KERNEL_LIST[-1]
+        CNN_RESIZE_X - (CNN_NUMBER_OF_KERNELS * CNN_FILTER_X) + CNN_NUMBER_OF_KERNELS) * CNN_KERNEL_LIST[-1]
     CNN_NEURAL_LIST = [CNN_CONNECTIONS_INN] + [1500] + [CNN_OUTPUT_SIZE]
     CNN_FILTER_TYPE = 'VALID'
-    # This name is saved in all tensors throughout the model,
-    # meaning that this must be the same when creating and loading a model.
+    # This name is saved in all tensors throughout the model, meaning that this must be the same when creating and loading a model.
     CNN_MODEL_NAME = str(CNN_INPUT_SIZE) + '_' + "conv_" + format_list(CNN_KERNEL_LIST[1:]) + "neural_" + format_list(
         CNN_NEURAL_LIST[1:-1]) + CNN_FILTER_TYPE + '_' + str(CNN_NUMBER_OF_ITERATIONS)
     CNN_MODEL_PATH = 'MODELS/' + CNN_MODEL_NAME
@@ -93,8 +91,8 @@ class VARS(object):
     # The different states the Viterbi algorithm uses
     VITERBI_STATES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    # The vitebi algorithm saves and loads the transition matrix. This matrix is saves as a dictionary.
+    # The viterbi algorithm saves and loads the transition matrix. This matrix is saves as a dictionary.
     VITERBI_TRANSITION_DICTIONARY_PATH = 'VITERBI/TRANSITION_DICTIONARY'
 
     # Convert the labels of the activities. Used for visualization
-    VISUALIZATION_CONVERSION = {1: 4, 2: 10, 3: 5, 4: 6, 5: 3, 6: 2, 7: 1, 8: 9, 9: 7, 10: 8}
+    VISUALIZATION_CONVERTION = {1: 4, 2: 10, 3: 5, 4: 6, 5: 3, 6: 2, 7: 1, 8: 9, 9: 7, 10: 8}

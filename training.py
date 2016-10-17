@@ -1,5 +1,5 @@
 from data import get_data_set
-from cnn import ConvolutionalNeuralNetwork
+from cnn import Convolutional_Neural_Network
 from viterbi import generate_transition_matrix
 import numpy as np
 import TRAINING_VARIABLES
@@ -18,7 +18,7 @@ def main():
     data_set.shuffle_data_set()
 
     ''' Create network '''
-    cnn = ConvolutionalNeuralNetwork()
+    cnn = Convolutional_Neural_Network()
     cnn.set_data_set(data_set)
     cnn.train_network()
     cnn.save_model()

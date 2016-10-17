@@ -1,4 +1,5 @@
 import pandas as pd
+import glob
 from os import listdir, makedirs
 from os.path import isfile, join, exists
 import numpy as np
@@ -147,8 +148,6 @@ def generate_windows(data_type, viterbi):
 
     for SUBJECT in SUBJECT_LIST:
         print SUBJECT
-        if SUBJECT.startswith(".DS_Store"):
-            break
         SUBJECT_PATH = PATH + '/' + SUBJECT
 
         SUBJECT_FILES_DICTIONARY = get_subject_files_from_path(SUBJECT_PATH)
@@ -187,8 +186,8 @@ def find_most_common_label(l):
 
 def convert_label(l):
     n = np.zeros(V.NUMBER_OF_ACTIVITIES)
-    if l in V.CONVERSION:
-        activity = V.CONVERSION[l]
+    if l in V.CONVERTION:
+        activity = V.CONVERTION[l]
         n[activity - 1] = 1.0
     else:
         activity = 1
@@ -251,8 +250,6 @@ def remove_activities(df_back, df_thigh, df_label, remove_activity_list):
 
 
 def load_dataframe(PATH):
-    if ".DS_Store" in PATH:
-        return
     return pd.read_csv(PATH, header=None)
 
 
