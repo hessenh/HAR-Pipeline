@@ -51,7 +51,6 @@ def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, 
         elif time_interval > max_data_points_between_peaks:
             start_peak = peak
             clap_count = 1  # Added resetting peak count when time interval too large from last peak. -- Eirik
-            # TODO: Should clap_count be reset here? -- Eirik
         else:
             # Interval is less than minimum interval; still part of an already registered peak.
             continue  # Skip to next loop iteration
@@ -231,7 +230,6 @@ def main():
     labeled_sensor_readings = labeled_sensor_readings.reset_index(drop=True)
     start_time = labeled_sensor_readings.Time[0]
 
-    # EIRIK: These lines are at
     print("Making 'seconds_list' ...")
     a = time()
     seconds_list = [(row - start_time).total_seconds() for row in labeled_sensor_readings.Time]
