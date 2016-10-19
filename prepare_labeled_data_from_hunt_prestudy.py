@@ -2,10 +2,13 @@
 from __future__ import division, print_function
 
 import glob
+from time import time
 
 import pandas as pd
-from time import time
+
 from external_modules.detect_peaks import detect_peaks
+from tools.pandas_helpers import add_to_column_in_data_frame, subtract_from_column_in_data_frame, \
+    write_selected_columns_to_file
 
 
 def create_synchronized_back_and_thigh_file_for_subject(folder, s_id):
@@ -62,14 +65,6 @@ def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, 
             clap_count = 1
 
     return claps
-
-
-def add_to_column_in_data_frame(data_frame, column_name, added):
-    data_frame[column_name] = data_frame.apply(lambda row: (row[column_name] + added), axis=1)
-
-
-def subtract_from_column_in_data_frame(data_frame, column_name, subtracted):
-    add_to_column_in_data_frame(data_frame, column_name, -subtracted)
 
 
 def set_header_names_for_data_generated_by_omconvert_script(data_frame):
@@ -155,11 +150,6 @@ def convert_string_labels_to_numbers(label_list):
     }
 
     return [label_to_number_dict[label] for label in label_list]
-
-
-def write_selected_columns_to_file(data_frame, columns, file_path, with_header=False, with_index=False):
-    data_frame_with_selected_columns = data_frame[columns]
-    data_frame_with_selected_columns.to_csv(file_path, header=with_header, index=with_index)
 
 
 def main():
