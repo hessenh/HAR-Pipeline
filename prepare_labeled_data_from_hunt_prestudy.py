@@ -36,7 +36,7 @@ def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, 
     claps = []
     start_peak = peak_array[0]
     previous_peak = start_peak
-    peak_count = 0
+    clap_count = 1
     max_data_points_between_peaks = max_interval * sampling_frequency
     min_data_points_between_peaks = min_interval * sampling_frequency
 
@@ -44,22 +44,22 @@ def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, 
         time_interval = peak - previous_peak
 
         if min_data_points_between_peaks < time_interval <= max_data_points_between_peaks:
-            peak_count += 1
+            clap_count += 1
         elif time_interval > max_data_points_between_peaks:
             start_peak = peak
-            peak_count = 0  # Added resetting peak count when time interval too large from last peak. -- Eirik
-            # TODO: Should peak_count be reset here? -- Eirik
+            clap_count = 1  # Added resetting peak count when time interval too large from last peak. -- Eirik
+            # TODO: Should clap_count be reset here? -- Eirik
         else:
             # Interval is less than minimum interval; still part of an already registered peak.
             continue  # Skip to next loop iteration
 
         previous_peak = peak
 
-        if peak_count == required_claps - 1:
+        if clap_count == required_claps:
             start_and_end_of_claps = (start_peak, peak)
             claps.append(start_and_end_of_claps)
             start_peak = peak  # Reset
-            peak_count = 0
+            clap_count = 1
 
     return claps
 
