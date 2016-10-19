@@ -144,6 +144,30 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
     return ind
 
 
+def create_synchronized_back_and_thigh_file_for_subject(folder, s_id):
+    import subprocess
+
+    omconvert = "./private_data/conversion_scripts/omconvert/omconvert"
+    timesync = "./private_data/conversion_scripts/timesync/timesync"
+
+    back_cwa = glob.glob(folder + "/*_BACK_*" + s_id + ".cwa")[0]
+    thigh_cwa = glob.glob(folder + "/*_THIGH_*" + s_id + ".cwa")[0]
+
+    back_wav = folder + '/' + s_id + "_back.wav"
+    thigh_wav = folder + '/' + s_id + "_thigh.wav"
+
+    synchronized_csv = folder + '/' + s_id + "_thigh.resampled.csv"
+
+    # Create wav and CSV for back sensor
+    subprocess.call([omconvert, back_cwa, "-out", back_wav, "-csv-file", folder + '/' + s_id + "_back.csv"])
+
+    # Create wav for thigh sensor
+    subprocess.call([omconvert, thigh_cwa, "-out", thigh_wav])
+
+    # Synchronize them and make them a CSV
+    subprocess.call([timesync, back_wav, thigh_wav, "-csv", synchronized_csv])
+
+
 def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
     claps = []
     start_peak = peak_array[0]
@@ -315,9 +339,19 @@ def main():
     print("Length of annotated data after removing heel drops:", last_heeldrop, "seconds")
 
     print("Reading sensor data ...")
+
     a = time()
-    sensor_readings = pd.read_csv(folder_and_subject_id + '_thigh.resampled.csv', parse_dates=[0],
-                                  header=None)
+    synchronized_csv_suffix = '_thigh.resampled.csv'
+    try:
+        sensor_readings = pd.read_csv(folder_and_subject_id + synchronized_csv_suffix, parse_dates=[0],
+                                      header=None)
+    except IOError:
+        print("Synchronized sensor data not found. Creating synchronized data.")
+        create_synchronized_back_and_thigh_file_for_subject(subject_folder, subject_id)
+        print("Conversion finished. Reading converted data.")
+        sensor_readings = pd.read_csv(folder_and_subject_id + synchronized_csv_suffix, parse_dates=[0],
+                                      header=None)
+
     b = time()
     print("Read sensor data in", b - a)
 
