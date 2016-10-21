@@ -7,8 +7,7 @@ from time import time
 import pandas as pd
 
 from external_modules.detect_peaks import detect_peaks
-from tools.pandas_helpers import add_to_column_in_data_frame, subtract_from_column_in_data_frame, \
-    write_selected_columns_to_file
+from tools.pandas_helpers import write_selected_columns_to_file
 
 
 def create_synchronized_back_and_thigh_file_for_subject(folder, s_id):
@@ -97,8 +96,8 @@ def combine_event_files_into_one_and_save(folder, s_id):
             rolling_offset = new.tail(1).iloc[0]['end']
             first = False
         else:
-            add_to_column_in_data_frame(new, 'start', rolling_offset)
-            add_to_column_in_data_frame(new, 'end', rolling_offset)
+            new['start'] = new['start'] + rolling_offset
+            new['end'] = new['end'] + rolling_offset
             rolling_offset = new.tail(1).iloc[0]['end']
             dfs.append(new)
 
@@ -106,7 +105,7 @@ def combine_event_files_into_one_and_save(folder, s_id):
 
     events_data_frame = events_data_frame[['start', 'end', 'duration', 'type']]
 
-    events_data_frame.to_csv(folder + '/' + s_id + "_events.csv")
+    events_data_frame.to_csv(folder + '/' + s_id + "_event.csv")
 
     return events_data_frame
 
@@ -180,8 +179,8 @@ def main():
     offset = heel_drop_events.iloc[0]['end']
     events = events.drop(events[events.end <= offset].index)
 
-    subtract_from_column_in_data_frame(events, 'start', offset)
-    subtract_from_column_in_data_frame(events, 'end', offset)
+    events['start'] = events['start'] - offset
+    events['end'] = events['end'] - offset
 
     # remove the last heel drops
     heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
