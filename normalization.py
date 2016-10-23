@@ -25,7 +25,7 @@ def batch_normalize_files(glob_expression, output_folder):
 
         head, tail = file_name.split(".")
         subject_output_folder = output_folder + "/" + subject_name
-        output_path = subject_output_folder+ "/" + "".join([head, "_normalized.", tail])
+        output_path = subject_output_folder + "/" + "".join([head, "_normalized.", tail])
 
         if not os.path.exists(subject_output_folder):
             os.makedirs(subject_output_folder)
