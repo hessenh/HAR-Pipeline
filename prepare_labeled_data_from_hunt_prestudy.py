@@ -105,7 +105,7 @@ def combine_event_files_into_one_and_save(folder, s_id):
 
     events_data_frame = events_data_frame[['start', 'end', 'duration', 'type']]
 
-    events_data_frame.to_csv(folder + '/' + s_id + "_event.csv")
+    events_data_frame.to_csv(folder + '/' + s_id + "_events.csv")
 
     return events_data_frame
 
