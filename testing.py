@@ -25,7 +25,7 @@ def main():
     cnn.load_model()
 
     ''''''
-    actual = data_set._labels
+    actual = data_set.labels
     cnn_result = cnn.get_predictions()
     np.savetxt(V.VITERBI_PREDICTION_PATH_TESTING, cnn_result, delimiter=",")
     cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,', engine='python').as_matrix()

@@ -1,6 +1,12 @@
 import tensorflow as tf
 import numpy as np
 import TRAINING_VARIABLES
+from data import DataSet
+
+
+'''
+MODULE FUNCTIONS
+'''
 
 
 def weight_variable(shape, name):
@@ -47,7 +53,17 @@ def get_nn_layer(input_variables, connections_in, connections_out, layer_number,
     return tf.nn.relu(features)
 
 
+'''
+CONFIGURATION VARIABLES
+'''
+
+
 V = TRAINING_VARIABLES.VARS()
+
+
+'''
+CNN CLASS
+'''
 
 
 class ConvolutionalNeuralNetwork(object):
@@ -80,9 +96,9 @@ class ConvolutionalNeuralNetwork(object):
                                         filter_type,
                                         model_name)
 
-            # Flatten output
             output_shape = resize_y * (resize_x - (number_of_kernels * filter_x) + number_of_kernels) * kernel_list[-1]
-            output = tf.reshape(output, [-1, output_shape])
+            flatten_output = tf.reshape(output, [-1, output_shape])
+            output = flatten_output
 
             return output
 
@@ -107,6 +123,16 @@ class ConvolutionalNeuralNetwork(object):
             return y_conv
 
 
+        def make_session():
+            session = tf.Session()
+            session.run(tf.initialize_all_variables())
+            return session
+
+
+        '''
+        CNN INSTANCE VARIABLES
+        '''
+
         '''Model configurations'''
         self._input_size = V.CNN_INPUT_SIZE
         self._output_size = V.CNN_OUTPUT_SIZE
@@ -114,30 +140,31 @@ class ConvolutionalNeuralNetwork(object):
         self._batch_size = V.CNN_BATCH_SIZE
         self._model_name = V.CNN_MODEL_NAME
 
-        '''Placeholders for input and output'''
+        '''Tensorflow placeholders'''
         self._x = tf.placeholder("float", shape=[None, self._input_size])
         self._y = tf.placeholder("float", shape=[None, self._output_size])
 
-        ''' Convolutinal layers'''
-        self.reshaped_input = tf.reshape(self._x, [-1, resize_y, resize_x, 1])
-        self.output_conv = connect_conv_layers(self.reshaped_input)
+        '''Convolutinal layers'''
+        self._output_conv = connect_conv_layers(tf.reshape(self._x, [-1, resize_y, resize_x, 1]))
 
         '''Densly conected layers'''
-        self.keep_prob = tf.placeholder("float")
-        self.y_conv = connect_nn_layers(self.output_conv, self.keep_prob)
+        self._keep_prob = tf.placeholder("float")
+        self._y_conv = connect_nn_layers(self._output_conv, self._keep_prob)
 
-        '''Calculations'''
-        self.cross_entropy = -tf.reduce_sum(self._y * tf.log(tf.clip_by_value(self.y_conv, 1e-10, 1.0)))
-        self.train_step = tf.train.AdamOptimizer(1e-4).minimize(self.cross_entropy)
-        self.correct_prediction = tf.equal(tf.argmax(self.y_conv, 1), tf.argmax(self._y, 1))
-        self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, "float"))
-
-        '''Variable initialization'''
-        self.init_op = tf.initialize_all_variables()
+        '''Tensorflow variables'''
+        self._cross_entropy = -tf.reduce_sum(self._y * tf.log(tf.clip_by_value(self._y_conv, 1e-10, 1.0)))
+        self._train_step = tf.train.AdamOptimizer(1e-4).minimize(self._cross_entropy)
+        self._correct_prediction = tf.equal(tf.argmax(self._y_conv, 1), tf.argmax(self._y, 1))
+        self._accuracy = tf.reduce_mean(tf.cast(self._correct_prediction, "float"))
 
         '''Data containers'''
-        self._data_set = []
-        self._session = tf.Session()
+        self._data_set = DataSet([], [])
+        self._session = make_session()
+
+
+    '''
+    CNN CLASS METHODS
+    '''
 
 
     def set_data_set(self, data_set):
@@ -145,14 +172,14 @@ class ConvolutionalNeuralNetwork(object):
 
 
     def load_model(self):
-        self._session = tf.Session()
-        model = V.CNN_MODEL_PATH
-        # Get last name. Path could be modles/test, so splitting on "/" and retreiving "test"
-        model_name = model.split('/')
-        model_name = model_name[-1]
+        load_path = V.CNN_MODEL_PATH
+        model_name = load_path.split('/')[-1]
+
         all_vars = tf.all_variables()
         model_vars = [k for k in all_vars if k.name.startswith(model_name)]
-        tf.train.Saver(model_vars).restore(self._session, model + '.ckpt')
+
+        tf.train.Saver(model_vars).restore(self._session, load_path + '.ckpt')
+        print("Model loaded from %s" % load_path)
 
 
     def save_model(self):
@@ -162,73 +189,67 @@ class ConvolutionalNeuralNetwork(object):
         print("Model saved in file: %s" % save_path)
 
 
-    ''' Train network '''
-
-
     def train_network(self):
-        '''Creating model'''
-        self._session = tf.Session()
-        self._session.run(self.init_op)
         for i in range(self._iteration_size):
             batch = self._data_set.next_batch(self._batch_size)
-            self._session.run(self.train_step, feed_dict={self._x: batch[0], self._y: batch[1], self.keep_prob: 0.5})
+            self._session.run(self._train_step, feed_dict={self._x: batch[0],
+                                                           self._y: batch[1],
+                                                           self._keep_prob: 0.5})
 
 
     def get_accuracy(self):
         activities = V.ACTIVITIES
 
-        length_of_data = len(self._data_set._data)
-        # print length_of_data
         total_accuracy = 0.0
         total_accuracy_whole = 0.0
-        for activity in activities:
-            # step = length_of_data / 10
 
-            activity_boolean = self._data_set._labels[::, activity] == 1.0
-            activity_data = self._data_set._data[activity_boolean]
-            activity_label = self._data_set._labels[activity_boolean]
-            # print len(activity_data)
+        for activity in activities:
+            activity_boolean = self._data_set.labels[::, activity] == 1.0
+            activity_data = self._data_set.data[activity_boolean]
+            activity_label = self._data_set.labels[activity_boolean]
+
             length_of_temp_step = len(activity_data) / 10
             temp_score = 0.0
+
             for i in range(0, 10):
                 temp_data = activity_data[i * length_of_temp_step:i * length_of_temp_step + length_of_temp_step]
                 temp_label = activity_label[i * length_of_temp_step:i * length_of_temp_step + length_of_temp_step]
-                temp_score += self._session.run(self.accuracy, feed_dict={
-                    self._x: temp_data, self._y: temp_label, self.keep_prob: 1.0})
+                temp_score += self._session.run(self._accuracy, feed_dict={self._x: temp_data,
+                                                                           self._y: temp_label,
+                                                                           self._keep_prob: 1.0})
+
             accuracy = temp_score / 10
             print str(accuracy).replace(".", ",")
+
             total_accuracy += accuracy
-            total_accuracy_whole += accuracy * (len(activity_data) * 1.0 / length_of_data)
+            total_accuracy_whole += accuracy * (len(activity_data) * 1.0 / len(self._data_set.data))
 
         print str(total_accuracy_whole).replace(".", ",")
         print str(total_accuracy / len(activities)).replace(".", ",")
 
 
+    def get_predictions(self):
+        data_batch = self._data_set.data
+        predictions = self._session.run(self._y_conv, feed_dict={self._x: data_batch,
+                                                                 self._keep_prob: 1.0})
+        return predictions
+
+
     def get_viterbi_data(self, data_set, number_of_samples):
 
-        if len(data_set._data) < number_of_samples:
-            number_of_samples = len(data_set._data)
+        if len(data_set.data) < number_of_samples:
+            number_of_samples = len(data_set.data)
 
-        actual = data_set._labels[0:number_of_samples]
-        data_sensor = data_set._data[0:number_of_samples]
+        actual = data_set.labels[0:number_of_samples]
+        data_sensor = data_set.data[0:number_of_samples]
 
-        predictions = np.zeros((len(data_sensor), len(V.ACTIVITIES)))
-        predictions = self._session.run(self.y_conv, feed_dict={self._x: data_sensor, self.keep_prob: 1.0})
+        # predictions = np.zeros((len(data_sensor), len(V.ACTIVITIES)))
+        predictions = self._session.run(self._y_conv, feed_dict={self._x: data_sensor, self._keep_prob: 1.0})
         # memory = 10
         # length_of_temp_step = len(predictions) / memory
         # for i in range(0, memory):
         #  data_batch = data_sensor[i*length_of_temp_step:i*length_of_temp_step+length_of_temp_step]
-        #  predictions[i*length_of_temp_step:i*length_of_temp_step+length_of_temp_step] = self.sess.run(self.y_conv, feed_dict={self.x: data_batch,self.keep_prob:1.0})
-
-
+        #  predictions[i*length_of_temp_step:i*length_of_temp_step+length_of_temp_step] =
+        # self.sess.run(self.y_conv, feed_dict={self.x: data_batch,self.keep_prob:1.0})
 
         return actual, predictions
-
-
-    def get_predictions(self):
-
-        length = len(self._data_set._data)
-
-        data_batch = self._data_set._data
-        predictions = self._session.run(self.y_conv, feed_dict={self._x: data_batch, self.keep_prob: 1.0})
-        return predictions
