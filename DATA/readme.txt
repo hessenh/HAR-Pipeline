@@ -1,2 +1,2 @@
-Plasser data i denne mappen:
+Place data in this folder.
 
