@@ -3,7 +3,6 @@ import numpy as np
 import TRAINING_VARIABLES
 from data import DataSet
 
-
 '''
 MODULE FUNCTIONS
 '''
@@ -57,9 +56,7 @@ def get_nn_layer(input_variables, connections_in, connections_out, layer_number,
 CONFIGURATION VARIABLES
 '''
 
-
 V = TRAINING_VARIABLES.VARS()
-
 
 '''
 CNN CLASS
@@ -82,7 +79,6 @@ class ConvolutionalNeuralNetwork(object):
         neural_list = V.CNN_NEURAL_LIST
         filter_type = V.CNN_FILTER_TYPE
 
-
         def connect_conv_layers(input_variables):
             output = input_variables
 
@@ -101,7 +97,6 @@ class ConvolutionalNeuralNetwork(object):
             output = flatten_output
 
             return output
-
 
         def connect_nn_layers(input_variables, keep_prob):
             output = input_variables
@@ -122,12 +117,10 @@ class ConvolutionalNeuralNetwork(object):
 
             return y_conv
 
-
         def make_session():
             session = tf.Session()
             session.run(tf.initialize_all_variables())
             return session
-
 
         '''
         CNN INSTANCE VARIABLES
@@ -161,15 +154,12 @@ class ConvolutionalNeuralNetwork(object):
         self._data_set = DataSet([], [])
         self._session = make_session()
 
-
     '''
     CNN CLASS METHODS
     '''
 
-
     def set_data_set(self, data_set):
         self._data_set = data_set
-
 
     def load_model(self):
         load_path = V.CNN_MODEL_PATH
@@ -181,13 +171,11 @@ class ConvolutionalNeuralNetwork(object):
         tf.train.Saver(model_vars).restore(self._session, load_path + '.ckpt')
         print("Model loaded from %s" % load_path)
 
-
     def save_model(self):
         path = V.CNN_MODEL_PATH
         saver = tf.train.Saver()
         save_path = saver.save(self._session, path + '.ckpt')
         print("Model saved in file: %s" % save_path)
-
 
     def train_network(self):
         for i in range(self._iteration_size):
@@ -195,7 +183,6 @@ class ConvolutionalNeuralNetwork(object):
             self._session.run(self._train_step, feed_dict={self._x: batch[0],
                                                            self._y: batch[1],
                                                            self._keep_prob: 0.5})
-
 
     def get_accuracy(self):
         activities = V.ACTIVITIES
@@ -227,13 +214,11 @@ class ConvolutionalNeuralNetwork(object):
         print str(total_accuracy_whole).replace(".", ",")
         print str(total_accuracy / len(activities)).replace(".", ",")
 
-
     def get_predictions(self):
         data_batch = self._data_set.data
         predictions = self._session.run(self._y_conv, feed_dict={self._x: data_batch,
                                                                  self._keep_prob: 1.0})
         return predictions
-
 
     def get_viterbi_data(self, data_set, number_of_samples):
 
