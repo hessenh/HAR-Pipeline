@@ -26,7 +26,7 @@ def max_pool_2x2(inputs):
     return tf.nn.max_pool(inputs, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
-def get_conv_layer(input_variables, kernels_in, kernels_out, layer_number, filter_x, filter_y, padding, name):
+def create_conv_layer(input_variables, kernels_in, kernels_out, layer_number, filter_x, filter_y, padding, name):
     weights_shape = [filter_y, filter_x, kernels_in, kernels_out]
     weights_name = name + "w_conv_" + layer_number
     weights = weight_variable(weights_shape, weights_name)
@@ -39,7 +39,7 @@ def get_conv_layer(input_variables, kernels_in, kernels_out, layer_number, filte
     return tf.nn.relu(features)
 
 
-def get_nn_layer(input_variables, connections_in, connections_out, layer_number, name):
+def create_nn_layer(input_variables, connections_in, connections_out, layer_number, name):
     weights_shape = [connections_in, connections_out]
     weights_name = name + 'w_fc_' + str(layer_number + 1)
     weights = weight_variable(weights_shape, weights_name)
@@ -83,14 +83,14 @@ class ConvolutionalNeuralNetwork(object):
             output = input_variables
 
             for i in range(0, len(kernel_list) - 1):
-                output = get_conv_layer(output,
-                                        kernel_list[i],
-                                        kernel_list[i + 1],
-                                        str(i + 1),
-                                        filter_x,
-                                        filter_y,
-                                        padding,
-                                        model_name)
+                output = create_conv_layer(output,
+                                           kernel_list[i],
+                                           kernel_list[i + 1],
+                                           str(i + 1),
+                                           filter_x,
+                                           filter_y,
+                                           padding,
+                                           model_name)
 
             output_shape = resize_y * (resize_x - (number_of_kernels * filter_x) + number_of_kernels) * kernel_list[-1]
             flatten_output = tf.reshape(output, [-1, output_shape])
@@ -102,11 +102,11 @@ class ConvolutionalNeuralNetwork(object):
             output = input_variables
 
             for i in range(0, len(neural_list) - 2):
-                output = get_nn_layer(output,
-                                      neural_list[i],
-                                      neural_list[i + 1],
-                                      i,
-                                      model_name)
+                output = create_nn_layer(output,
+                                         neural_list[i],
+                                         neural_list[i + 1],
+                                         i,
+                                         model_name)
                 print(output.get_shape(), 'NN', i)
 
             # Last layer
