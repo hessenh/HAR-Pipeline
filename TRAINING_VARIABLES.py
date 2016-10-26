@@ -64,10 +64,10 @@ class VARS(object):
     CNN_CONNECTIONS_INN = CNN_RESIZE_Y * (
         CNN_RESIZE_X - (CNN_NUMBER_OF_KERNELS * CNN_FILTER_X) + CNN_NUMBER_OF_KERNELS) * CNN_KERNEL_LIST[-1]
     CNN_NEURAL_LIST = [CNN_CONNECTIONS_INN] + [1500] + [CNN_OUTPUT_SIZE]
-    CNN_FILTER_TYPE = 'VALID'
+    CNN_PADDING = 'VALID'
     # This name is saved in all tensors throughout the model, meaning that this must be the same when creating and loading a model.
     CNN_MODEL_NAME = str(CNN_INPUT_SIZE) + '_' + "conv_" + format_list(CNN_KERNEL_LIST[1:]) + "neural_" + format_list(
-        CNN_NEURAL_LIST[1:-1]) + CNN_FILTER_TYPE + '_' + str(CNN_NUMBER_OF_ITERATIONS)
+        CNN_NEURAL_LIST[1:-1]) + CNN_PADDING + '_' + str(CNN_NUMBER_OF_ITERATIONS)
     CNN_MODEL_PATH = 'MODELS/' + CNN_MODEL_NAME
 
     ''' VITERBI '''

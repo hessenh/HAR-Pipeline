@@ -1,5 +1,5 @@
 from data import get_data_set
-from cnn import Convolutional_Neural_Network
+from cnn import ConvolutionalNeuralNetwork
 from viterbi import run_viterbi
 import numpy as np
 import TRAINING_VARIABLES
@@ -20,7 +20,7 @@ def main():
     data_set = get_data_set(DATA_TYPE, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
 
     ''' Create network '''
-    cnn = Convolutional_Neural_Network()
+    cnn = ConvolutionalNeuralNetwork()
     cnn.set_data_set(data_set)
     cnn.load_model()
 
@@ -28,6 +28,10 @@ def main():
     cnn_result = cnn.get_predictions()
 
     viterbi_result = run_viterbi()
+
+    data_frame = pd.DataFrame(viterbi_result)
+
+    data_frame.to_csv(V.VITERBI_RESULT_PREDICTING)  # TODO: Results are the same every run. Source of error unknown.
 
     print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
 
