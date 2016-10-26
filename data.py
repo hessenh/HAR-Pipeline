@@ -13,17 +13,17 @@ V = TRAINING_VARIABLES.VARS()
 
 class DataSet(object):
     def __init__(self, data, labels):
-        self._data = data
-        self._labels = labels
+        self.data = data
+        self.labels = labels
         self._epochs_completed = 0
         self._index_in_epoch = 0
         self._num_examples = len(data)
 
     def shuffle_data_set(self):
-        perm = np.arange(len(self._data))
+        perm = np.arange(len(self.data))
         np.random.shuffle(perm)
-        self._data = self._data[perm]
-        self._labels = self._labels[perm]
+        self.data = self.data[perm]
+        self.labels = self.labels[perm]
 
     def next_batch(self, batch_size):
         """Return the next `batch_size` examples from this data set."""
@@ -35,14 +35,14 @@ class DataSet(object):
             # Shuffle the data
             perm = np.arange(self._num_examples)
             np.random.shuffle(perm)
-            self._data = self._data[perm]
-            self._labels = self._labels[perm]
+            self.data = self.data[perm]
+            self.labels = self.labels[perm]
             # Start next epoch
             start = 0
             self._index_in_epoch = batch_size
             assert batch_size <= self._num_examples
         end = self._index_in_epoch
-        return self._data[start:end], self._labels[start:end]
+        return self.data[start:end], self.labels[start:end]
 
 
 def main():
