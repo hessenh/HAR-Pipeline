@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import TRAINING_VARIABLES
 from data import DataSet
 
