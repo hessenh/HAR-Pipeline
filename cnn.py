@@ -18,15 +18,15 @@ def bias_variable(shape, name):
     return tf.Variable(initial, name=name)
 
 
-def conv2d(x, W, filter_type):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding=filter_type)
+def conv2d(inputs, W, padding):
+    return tf.nn.conv2d(inputs, W, strides=[1, 1, 1, 1], padding=padding)
 
 
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+def max_pool_2x2(inputs):
+    return tf.nn.max_pool(inputs, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
-def get_conv_layer(input_variables, kernels_in, kernels_out, layer_number, filter_x, filter_y, filter_type, name):
+def get_conv_layer(input_variables, kernels_in, kernels_out, layer_number, filter_x, filter_y, padding, name):
     weights_shape = [filter_y, filter_x, kernels_in, kernels_out]
     weights_name = name + "w_conv_" + layer_number
     weights = weight_variable(weights_shape, weights_name)
@@ -35,7 +35,7 @@ def get_conv_layer(input_variables, kernels_in, kernels_out, layer_number, filte
     bias_name = name + 'b_conv_' + layer_number
     bias = bias_variable(bias_shape, bias_name)
 
-    features = conv2d(input_variables, weights, filter_type) + bias
+    features = conv2d(input_variables, weights, padding) + bias
     return tf.nn.relu(features)
 
 
@@ -77,7 +77,7 @@ class ConvolutionalNeuralNetwork(object):
         kernel_list = V.CNN_KERNEL_LIST
         number_of_kernels = V.CNN_NUMBER_OF_KERNELS
         neural_list = V.CNN_NEURAL_LIST
-        filter_type = V.CNN_FILTER_TYPE
+        padding = V.CNN_PADDING
 
         def connect_conv_layers(input_variables):
             output = input_variables
@@ -89,7 +89,7 @@ class ConvolutionalNeuralNetwork(object):
                                         str(i + 1),
                                         filter_x,
                                         filter_y,
-                                        filter_type,
+                                        padding,
                                         model_name)
 
             output_shape = resize_y * (resize_x - (number_of_kernels * filter_x) + number_of_kernels) * kernel_list[-1]
