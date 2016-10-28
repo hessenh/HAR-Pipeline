@@ -63,20 +63,13 @@ CNN CLASS
 
 
 class ConvolutionalNeuralNetwork(object):
-    def __init__(self):
+    def __init__(self, model_name=V.CNN_MODEL_NAME, filter_x=V.CNN_FILTER_X, filter_y=V.CNN_FILTER_Y,
+                 resize_y=V.CNN_RESIZE_Y, resize_x=V.CNN_RESIZE_X, kernel_list=V.CNN_KERNEL_LIST,
+                 number_of_kernels=V.CNN_NUMBER_OF_KERNELS, neural_list=V.CNN_NEURAL_LIST, padding=V.CNN_PADDING,
+                 input_size=V.CNN_INPUT_SIZE, output_size=V.CNN_OUTPUT_SIZE, number_of_iterations=V.CNN_NUMBER_OF_ITERATIONS,
+                 batch_size=V.CNN_BATCH_SIZE):
+
         self._info = "Convolutional neural network with two convolutional layers and a fully connected network"
-
-        model_name = V.CNN_MODEL_NAME
-
-        filter_x = V.CNN_FILTER_X
-        filter_y = V.CNN_FILTER_Y
-        resize_y = V.CNN_RESIZE_Y
-        resize_x = V.CNN_RESIZE_X
-
-        kernel_list = V.CNN_KERNEL_LIST
-        number_of_kernels = V.CNN_NUMBER_OF_KERNELS
-        neural_list = V.CNN_NEURAL_LIST
-        padding = V.CNN_PADDING
 
         def connect_conv_layers(input_variables):
             output = input_variables
@@ -126,11 +119,11 @@ class ConvolutionalNeuralNetwork(object):
         '''
 
         '''Model configurations'''
-        self._input_size = V.CNN_INPUT_SIZE
-        self._output_size = V.CNN_OUTPUT_SIZE
-        self._iteration_size = V.CNN_NUMBER_OF_ITERATIONS
-        self._batch_size = V.CNN_BATCH_SIZE
-        self._model_name = V.CNN_MODEL_NAME
+        self._input_size = input_size
+        self._output_size = output_size
+        self._iteration_size = number_of_iterations
+        self._batch_size = batch_size
+        self._model_name = model_name
 
         '''Tensorflow placeholders'''
         self._x = tf.placeholder("float", shape=[None, self._input_size])
@@ -160,8 +153,7 @@ class ConvolutionalNeuralNetwork(object):
     def set_data_set(self, data_set):
         self._data_set = data_set
 
-    def load_model(self):
-        load_path = V.CNN_MODEL_PATH
+    def load_model(self, load_path=V.CNN_MODEL_PATH):
         model_name = load_path.split('/')[-1]
 
         all_vars = tf.all_variables()
@@ -170,8 +162,7 @@ class ConvolutionalNeuralNetwork(object):
         tf.train.Saver(model_vars).restore(self._session, load_path + '.ckpt')
         print("Model loaded from %s" % load_path)
 
-    def save_model(self):
-        path = V.CNN_MODEL_PATH
+    def save_model(self, path=V.CNN_MODEL_PATH):
         saver = tf.train.Saver()
         save_path = saver.save(self._session, path + '.ckpt')
         print("Model saved in file: %s" % save_path)
