@@ -66,8 +66,8 @@ class ConvolutionalNeuralNetwork(object):
     def __init__(self, model_name=V.CNN_MODEL_NAME, filter_x=V.CNN_FILTER_X, filter_y=V.CNN_FILTER_Y,
                  resize_y=V.CNN_RESIZE_Y, resize_x=V.CNN_RESIZE_X, kernel_list=V.CNN_KERNEL_LIST,
                  number_of_kernels=V.CNN_NUMBER_OF_KERNELS, neural_list=V.CNN_NEURAL_LIST, padding=V.CNN_PADDING,
-                 input_size=V.CNN_INPUT_SIZE, output_size=V.CNN_OUTPUT_SIZE, number_of_iterations=V.CNN_NUMBER_OF_ITERATIONS,
-                 batch_size=V.CNN_BATCH_SIZE):
+                 input_size=V.CNN_INPUT_SIZE, output_size=V.CNN_OUTPUT_SIZE,
+                 number_of_iterations=V.CNN_NUMBER_OF_ITERATIONS, batch_size=V.CNN_BATCH_SIZE):
 
         self._info = "Convolutional neural network with two convolutional layers and a fully connected network"
 
