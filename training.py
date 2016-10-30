@@ -14,7 +14,7 @@ def main():
     generate_new_windows = True
     oversampling = True
     viterbi = False
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH)
     data_set.shuffle_data_set()
 
     # Create network
@@ -31,7 +31,7 @@ def main():
     generate_new_windows = True
     oversampling = False
     viterbi = True
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH)
     cnn.load_model()
     # Data set and number of samples
     actual, predictions = cnn.get_viterbi_data(data_set, V.VITERBI_LENGTH_OF_TRANSITION_DATA)

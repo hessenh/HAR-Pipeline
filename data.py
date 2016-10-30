@@ -48,29 +48,21 @@ def main():
     get_data_set("testing", False, False, False)
 
 
-def get_data_set(data_type, generate_new_windows, oversampling, viterbi):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path):
     if generate_new_windows:
-        generate_windows(data_type, viterbi)
+        generate_windows(data_type, viterbi, subjects_path)
 
-    df_sensor, df_label = load_windows(data_type, oversampling)
+    df_sensor, df_label = load_windows(data_type, oversampling, subjects_path)
     data_set = DataSet(df_sensor, df_label)
 
     return data_set
 
 
-def load_windows(data_type, oversampling):
+def load_windows(data_type, oversampling, subjects_path):
     df_sensor = None
     df_label = None
 
-    if data_type == "testing":
-        all_subjects_path = V.TESTING_PATH
-
-    elif data_type == "training":
-        all_subjects_path = V.TRAINING_PATH
-    elif data_type == "predicting":
-        all_subjects_path = V.PREDICTING_PATH
-
-    subject_list = get_folder_names(all_subjects_path)
+    subject_list = get_folder_names(subjects_path)
 
     # If subject list is empty - alert
     if len(subject_list) == 0:
@@ -80,7 +72,7 @@ def load_windows(data_type, oversampling):
     # Iterate over all subjects
     for subject_id in subject_list:
         print subject_id
-        subject_window_path = all_subjects_path + '/' + subject_id + '/WINDOW/'
+        subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
 
         df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv')
         if data_type != "predicting":
@@ -133,21 +125,12 @@ def load_windows(data_type, oversampling):
     return df_sensor, df_label
 
 
-def generate_windows(data_type, viterbi):
-    # List of subjects
-    if data_type == "testing":
-        all_subjects_path = V.TESTING_PATH
-
-    elif data_type == "training":
-        all_subjects_path = V.TRAINING_PATH
-    elif data_type == "predicting":
-        all_subjects_path = V.PREDICTING_PATH
-
-    subject_list = get_folder_names(all_subjects_path)
+def generate_windows(data_type, viterbi, subjects_path):
+    subject_list = get_folder_names(subjects_path)
 
     for subject_name in subject_list:
         print subject_name
-        subject_path = all_subjects_path + '/' + subject_name
+        subject_path = subjects_path + '/' + subject_name
 
         subject_files_dictionary = get_subject_files_from_path(subject_path)
 

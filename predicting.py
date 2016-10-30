@@ -17,7 +17,7 @@ def main():
     GENERATE_NEW_WINDOWS = True
     OVERSAMPLING = False
     VITERBI = False
-    data_set = get_data_set(DATA_TYPE, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
+    data_set = get_data_set(DATA_TYPE, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI, V.PREDICTING_PATH)
 
     ''' Create network '''
     cnn = ConvolutionalNeuralNetwork()
