@@ -11,20 +11,19 @@ V = TRAINING_VARIABLES.VARS()
 
 
 def main():
-    ''' Load test data '''
+    # Load test data
     # Input: Testing, generate new windows, oversampling, viterbi training
-    DATA_TYPE = "predicting"
-    GENERATE_NEW_WINDOWS = True
-    OVERSAMPLING = False
-    VITERBI = False
-    data_set = get_data_set(DATA_TYPE, GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI, V.PREDICTING_PATH)
+    data_type = "predicting"
+    generate_new_windows = True
+    oversampling = False
+    viterbi = False
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.PREDICTING_PATH)
 
-    ''' Create network '''
+    # Create network
     cnn = ConvolutionalNeuralNetwork()
     cnn.set_data_set(data_set)
     cnn.load_model()
 
-    ''''''
     cnn_result = cnn.get_predictions()
 
     viterbi_result = run_viterbi()
@@ -64,36 +63,36 @@ def get_score(result_matrix):
     '''TP / (FP - TP)
     Correctly classified walking / Classified as walking
     '''
-    TP = np.zeros(len(activities))
-    TN = np.zeros(len(activities))
+    true_positives = np.zeros(len(activities))
+    true_negatives = np.zeros(len(activities))
 
-    FP_TP = np.zeros(len(activities))
-    TP_FN = np.zeros(len(activities))
-    FP_TN = np.zeros(len(activities))
+    fp_tp = np.zeros(len(activities))
+    tp_fn = np.zeros(len(activities))
+    fp_tn = np.zeros(len(activities))
 
     actual = result_matrix[:, 0]
     predicted = result_matrix[:, 2]
 
     for activity in activities:
         ''' FP - TP'''
-        FP_TP[activity - 1] = np.sum(predicted == activity)  # len(df[df[0]==activity])
+        fp_tp[activity - 1] = np.sum(predicted == activity)  # len(df[df[0]==activity])
         ''' TP - FN '''
-        TP_FN[activity - 1] = np.sum(actual == activity)  # len(df_actual[df_actual[0]==activity])
+        tp_fn[activity - 1] = np.sum(actual == activity)  # len(df_actual[df_actual[0]==activity])
         ''' FP - TN '''
-        FP_TN[activity - 1] = np.sum(actual != activity)  # len(df_actual[df_actual[0] != activity])
+        fp_tn[activity - 1] = np.sum(actual != activity)  # len(df_actual[df_actual[0] != activity])
 
     for i in range(0, len(predicted)):
         if predicted[i] == actual[i]:
-            TP[actual[i] - 1] += 1.0
+            true_positives[actual[i] - 1] += 1.0
 
         for activity in activities:
             if actual[i] != activity and predicted[i] != activity:
-                TN[activity - 1] += 1.0
+                true_negatives[activity - 1] += 1.0
 
-    accuracy = sum(TP) / sum(TP_FN)
-    specificity = TN / FP_TN
-    precision = TP / FP_TP
-    recall = TP / TP_FN
+    accuracy = sum(true_positives) / sum(tp_fn)
+    specificity = true_negatives / fp_tn
+    precision = true_positives / fp_tp
+    recall = true_positives / tp_fn
     return [accuracy, specificity, precision, recall]
 
 
@@ -109,7 +108,7 @@ def visualize(result_matrix):
     cnn = result_matrix[:, 1][start:stop]
     viterbi = result_matrix[:, 2][start:stop]
 
-    t = cnn != viterbi
+    # t = cnn != viterbi
     # actual = actual[t]
     # cnn = cnn[t]
     # viterbi = viterbi[t]
@@ -140,7 +139,7 @@ def visualize(result_matrix):
     plt.show()
 
 
-def confusion_matrix(result_matrix, index):
+def show_confusion_matrix(result_matrix, index):
     for i in range(0, len(result_matrix)):
         result_matrix[i][0] = V.VISUALIZATION_CONVERTION[result_matrix[i][0] + 1]
         result_matrix[i][1] = V.VISUALIZATION_CONVERTION[result_matrix[i][1] + 1]
