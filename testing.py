@@ -54,7 +54,7 @@ def main():
 
 
 # TODO: This is a duplicate of a function in predicting.py
-def produce_statistics_json(result):
+def produce_statistics_json(result, save_path=V.RESULT_TESTING_JSON):
     score = get_score(result)
 
     specificity = {}
@@ -72,8 +72,7 @@ def produce_statistics_json(result):
         'RECALL': recall
     }
 
-    path = V.RESULT_TESTING_JSON
-    with open(path, "w") as outfile:
+    with open(save_path, "w") as outfile:
         json.dump(statistics, outfile)
     return statistics
 

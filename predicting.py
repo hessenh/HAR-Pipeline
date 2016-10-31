@@ -36,7 +36,7 @@ def main():
 
 
 # TODO: This is a duplicate of a function in testing.py
-def produce_statistics_json(result):
+def produce_statistics_json(result, save_path='RESULTS/TEST_STATISTICS.json'):
     score = get_score(result)
 
     specificity = {}
@@ -53,8 +53,8 @@ def produce_statistics_json(result):
         'PRECISION': precision,
         'RECALL': recall
     }
-    path = 'RESULTS/TEST_STATISTICS.json'
-    with open(path, "w") as outfile:
+
+    with open(save_path, "w") as outfile:
         json.dump(statistics, outfile)
     return statistics
 
