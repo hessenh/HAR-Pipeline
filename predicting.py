@@ -35,6 +35,7 @@ def main():
     print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
 
 
+# TODO: This is a duplicate of a function in testing.py
 def produce_statistics_json(result):
     score = get_score(result)
 

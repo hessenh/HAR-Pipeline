@@ -53,6 +53,7 @@ def main():
     # visualize(result)
 
 
+# TODO: This is a duplicate of a function in predicting.py
 def produce_statistics_json(result):
     score = get_score(result)
 
