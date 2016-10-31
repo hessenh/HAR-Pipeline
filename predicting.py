@@ -72,7 +72,7 @@ def get_score(result_matrix):
     fp_tn = np.zeros(len(activities))
 
     actual = result_matrix[:, 0]
-    predicted = result_matrix[:, 2]
+    predicted = result_matrix[:, 2]  # TODO: This differs from the previous versions
 
     for activity in activities:
         ''' FP - TP'''

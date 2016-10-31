@@ -48,13 +48,13 @@ def main():
     np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
     result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,', engine='python').as_matrix()
 
-    produce_statistics_json(result)
+    produce_statistics_json(result, V.RESULT_TESTING_JSON)
 
     # visualize(result)
 
 
 # TODO: This is a duplicate of a function in predicting.py
-def produce_statistics_json(result, save_path=V.RESULT_TESTING_JSON):
+def produce_statistics_json(result, save_path):
     score = get_score(result)
 
     specificity = {}
