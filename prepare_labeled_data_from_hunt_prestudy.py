@@ -72,10 +72,11 @@ def set_header_names_for_data_generated_by_omconvert_script(data_frame):
         inplace=True)
 
 
-def find_first_and_second_clap_times_from_sensor_channel(channel_data, mph=5, valley=True):
+def find_first_and_second_clap_times_from_sensor_channel(channel_data, sampling_frequency, mph=5, valley=True,
+                                                         required_claps=3):
     peaks = detect_peaks(channel_data, mph=mph, valley=valley)
 
-    claps = find_claps_from_peaks(peaks)
+    claps = find_claps_from_peaks(peaks, required_claps=required_claps, sampling_frequency=sampling_frequency)
     end_of_first_claps = claps[0][1]
     start_of_second_claps = claps[1][0]
 
@@ -111,20 +112,17 @@ def combine_event_files_into_one_and_save(folder, s_id):
     return events_data_frame
 
 
-def make_labels_for_points_in_time(data_point_times, labels_list, end_times_list):
-    labels_for_data_points = []
+def make_labels_for_timestamps(timestamps, labels_list, end_times_list):
+    labels_for_timestamps = []
 
-    index_of_data_point_time_to_be_examined = 0
-
-    size_of_times = len(data_point_times)
+    next_timestamp_index = 0
 
     for label, end_time in zip(labels_list, end_times_list):
-        while index_of_data_point_time_to_be_examined < size_of_times \
-                and data_point_times[index_of_data_point_time_to_be_examined] <= end_time:
-            labels_for_data_points.append(label)
-            index_of_data_point_time_to_be_examined += 1
+        while next_timestamp_index < len(timestamps) and timestamps[next_timestamp_index] <= end_time:
+            labels_for_timestamps.append(label)
+            next_timestamp_index += 1
 
-    return labels_for_data_points
+    return labels_for_timestamps
 
 
 def convert_string_labels_to_numbers(label_list):
@@ -152,46 +150,49 @@ def convert_string_labels_to_numbers(label_list):
 
 
 def main():
-    subject_id = '009'
-    master_sensor_codeword = "UPPERBACK"
+    subject_id = '001'
+    master_sensor_codeword = "BACK"
     thigh_sensor_codeword = "THIGH"
+    starting_heel_drops = 2
+    ending_heel_drops = 2
     subject_folder = 'private_data/conversion_scripts/annotated_data/' + subject_id
     folder_and_subject_id = subject_folder + '/' + subject_id
 
-    sampling_frequency = 100  # Sampling frequency in hertz
+    sampling_frequency = 200  # Sampling frequency in hertz
 
-    print("Reading annotations ...")
+    print("Reading events ...")
     a = time()
 
     try:
         events = pd.read_csv(folder_and_subject_id + '_events.csv', sep=',')
     except IOError:
-        print("Combined annotations file not found. Creating annotation file from separate files.")
+        print("Combined events file not found. Creating events file from separate files.")
         events = combine_event_files_into_one_and_save(subject_folder, subject_id)
 
     b = time()
-    print("Read annotations in", b - a)
+    print("Read events in", b - a)
 
     events = events[['start', 'end', 'duration', 'type']]
 
-    print("\nFinding heel drops in the data")
-    starting_heel_drops = 3
-    ending_heel_drop_index = starting_heel_drops - 1
+    print("\nFinding heel drops in the events file")
 
-    heel_drop_events = events.loc[events['type'] == 'heel drop'][ending_heel_drop_index:]
-    offset = heel_drop_events.iloc[0]['end']
-    events = events.drop(events[events.end <= offset].index)
+    if starting_heel_drops:
+        last_starting_heel_drop_index = starting_heel_drops - 1
 
-    events['start'] = events['start'] - offset
-    events['end'] = events['end'] - offset
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][last_starting_heel_drop_index:]
+        offset = heel_drop_events.iloc[0]['end']
+        events = events.drop(events[events.end <= offset].index)
+
+        events['start'] = events['start'] - offset
+        events['end'] = events['end'] - offset
+        print("First heel drops end at", offset, "seconds")
 
     # remove the last heel drops
-    heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
-    last_heeldrop = heel_drop_events.iloc[0]['start']
-    events = events.drop(events[events.end > last_heeldrop].index)
-
-    print("First heel drops end at", offset, "seconds")
-    print("Length of annotated data after removing heel drops:", last_heeldrop, "seconds")
+    if ending_heel_drops:
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
+        last_heeldrop = heel_drop_events.iloc[0]['start']
+        events = events.drop(events[events.end > last_heeldrop].index)
+        print("Length of annotated data after removing heel drops:", last_heeldrop, "seconds")
 
     print("Reading sensor data ...")
 
@@ -218,10 +219,16 @@ def main():
     # First find the value range between the 3 starting and ending hand claps
     sx = sensor_readings['Slave-X']
 
-    first_clap_index, ending_clap_index = find_first_and_second_clap_times_from_sensor_channel(sx, mph=5,
-                                                                                               valley=True)
+    first_clap_index, ending_clap_index = find_first_and_second_clap_times_from_sensor_channel(sx,
+                                                                                               sampling_frequency,
+                                                                                               mph=8,
+                                                                                               valley=True,
+                                                                                               required_claps=min(
+                                                                                                   starting_heel_drops,
+                                                                                                   ending_heel_drops))
     print("Found claps in sensor data")
 
+    print("First clap at", first_clap_index / sampling_frequency, "seconds")
     session_length = (ending_clap_index - first_clap_index) / sampling_frequency
     print("Session length between start and end claps:", session_length, "seconds")
 
@@ -245,8 +252,8 @@ def main():
     events_end_times = events.end
 
     a = time()
-    labels_for_each_data_point_in_seconds_list = make_labels_for_points_in_time(seconds_list, events_labels,
-                                                                                events_end_times)
+    labels_for_each_data_point_in_seconds_list = make_labels_for_timestamps(seconds_list, events_labels,
+                                                                            events_end_times)
     labels_for_each_data_point_in_seconds_list = convert_string_labels_to_numbers(
         labels_for_each_data_point_in_seconds_list)
 
