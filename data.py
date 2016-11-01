@@ -1,5 +1,4 @@
 import pandas as pd
-import glob
 from os import listdir, makedirs
 from os.path import isfile, join, exists
 import numpy as np
@@ -49,43 +48,35 @@ def main():
     get_data_set("testing", False, False, False)
 
 
-def get_data_set(data_type, generate_new_windows, oversampling, viterbi):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path):
     if generate_new_windows:
-        generate_windows(data_type, viterbi)
+        generate_windows(data_type, viterbi, subjects_path)
 
-    df_sensor, df_label = load_windows(data_type, oversampling)
+    df_sensor, df_label = load_windows(data_type, oversampling, subjects_path)
     data_set = DataSet(df_sensor, df_label)
 
     return data_set
 
 
-def load_windows(data_type, oversampling):
+def load_windows(data_type, oversampling, subjects_path):
     df_sensor = None
     df_label = None
 
-    if data_type == "testing":
-        PATH = V.TESTING_PATH
+    subject_list = get_folder_names(subjects_path)
 
-    elif data_type == "training":
-        PATH = V.TRAINING_PATH
-    elif data_type == "predicting":
-        PATH = V.PREDICTING_PATH
-
-    SUBJECT_LIST = get_folder_names(PATH)
-
-    # If subject list is empy - alert
-    if len(SUBJECT_LIST) == 0:
+    # If subject list is empty - alert
+    if len(subject_list) == 0:
         print "No subjects found!"
 
     first_iteration = True
     # Iterate over all subjects
-    for SUBJECT in SUBJECT_LIST:
-        print SUBJECT
-        path = PATH + '/' + SUBJECT + '/WINDOW/'
+    for subject_id in subject_list:
+        print subject_id
+        subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
 
-        df_sensor_temp = load_dataframe(path + 'SENSORS.csv')
+        df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv')
         if data_type != "predicting":
-            df_label_temp = pd.read_csv(path + 'LABEL.csv', header=None, sep=',')
+            df_label_temp = pd.read_csv(subject_window_path + 'LABEL.csv', header=None, sep=',')
 
         if first_iteration:
             df_sensor = df_sensor_temp.as_matrix()
@@ -134,35 +125,26 @@ def load_windows(data_type, oversampling):
     return df_sensor, df_label
 
 
-def generate_windows(data_type, viterbi):
-    # List of subjects
-    if data_type == "testing":
-        PATH = V.TESTING_PATH
+def generate_windows(data_type, viterbi, subjects_path):
+    subject_list = get_folder_names(subjects_path)
 
-    elif data_type == "training":
-        PATH = V.TRAINING_PATH
-    elif data_type == "predicting":
-        PATH = V.PREDICTING_PATH
+    for subject_name in subject_list:
+        print subject_name
+        subject_path = subjects_path + '/' + subject_name
 
-    SUBJECT_LIST = get_folder_names(PATH)
+        subject_files_dictionary = get_subject_files_from_path(subject_path)
 
-    for SUBJECT in SUBJECT_LIST:
-        print SUBJECT
-        SUBJECT_PATH = PATH + '/' + SUBJECT
-
-        SUBJECT_FILES_DICTIONARY = get_subject_files_from_path(SUBJECT_PATH)
-
-        df_sensor_1 = load_dataframe(SUBJECT_PATH + '/' + SUBJECT_FILES_DICTIONARY[V.SENSOR_1])
-        df_sensor_2 = load_dataframe(SUBJECT_PATH + '/' + SUBJECT_FILES_DICTIONARY[V.SENSOR_2])
+        df_sensor_1 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_1])
+        df_sensor_2 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_2])
         if data_type != "predicting":
-            df_label = load_dataframe(SUBJECT_PATH + '/' + SUBJECT_FILES_DICTIONARY[V.LABEL])
+            df_label = load_dataframe(subject_path + '/' + subject_files_dictionary[V.LABEL])
 
         # Remove activities
         if data_type == "training" and not viterbi:
             df_sensor_1, df_sensor_2, df_label = remove_activities(df_sensor_1, df_sensor_2, df_label,
                                                                    V.REMOVE_ACTIVITIES)
 
-        result_path = SUBJECT_PATH + '/WINDOW/'
+        result_path = subject_path + '/WINDOW/'
 
         # Create windows
         if data_type == "testing" or viterbi:
@@ -207,7 +189,7 @@ def create_window_label(df_label, folder, length, overlap):
     # df_window = df_window.apply(convert_label)
     df_window = pd.DataFrame(new_window)
 
-    save_dataframe(df_window, folder, V.WINDOW_NAME_LABEL)
+    save_data_frame(df_window, folder, V.WINDOW_NAME_LABEL)
 
 
 def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap):
@@ -223,10 +205,10 @@ def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap):
 
     df = pd.concat([df_s_1_x, df_s_1_y, df_s_1_z, df_s_2_x, df_s_2_y, df_s_2_z], axis=1)
 
-    save_dataframe(df, folder, V.WINDOW_NAME_SENSOR)
+    save_data_frame(df, folder, V.WINDOW_NAME_SENSOR)
 
 
-def save_dataframe(df, folder, file_name):
+def save_data_frame(df, folder, file_name):
     # Check if folder exists, if not, create one
     if not exists(folder):
         makedirs(folder)
@@ -249,45 +231,45 @@ def remove_activities(df_back, df_thigh, df_label, remove_activity_list):
     return df_back, df_thigh, df_label
 
 
-def load_dataframe(PATH):
-    return pd.read_csv(PATH, header=None)
+def load_dataframe(path):
+    return pd.read_csv(path, header=None)
 
 
-def get_folder_names(PATH):
-    return listdir(PATH)
+def get_folder_names(path):
+    return listdir(path)
 
 
-def get_subject_files_from_path(SUBJECT_PATH):
-    SUBJECT_FILES = [f for f in listdir(SUBJECT_PATH) if isfile(join(SUBJECT_PATH, f))]
+def get_subject_files_from_path(subject_path):
+    subject_files = [f for f in listdir(subject_path) if isfile(join(subject_path, f))]
 
     # Using a dictionary to connect sensor type with filename
     # 'LAB': '01A_GoPro_LAB_All.csv'
-    SUBJECT_FILES_DICTIONARY = {}
-    for file in SUBJECT_FILES:
-        file_split = file.split("_")
+    subject_files_dictionary = {}
+    for subject_file in subject_files:
+        file_split = subject_file.split("_")
         # Using the third word as the key
-        SUBJECT_FILES_DICTIONARY[file_split[2]] = file
+        subject_files_dictionary[file_split[2]] = subject_file
 
-    return SUBJECT_FILES_DICTIONARY
+    return subject_files_dictionary
 
 
 ''' Sliding window methods bellow are from http://www.johnvinyard.com/blog/?p=268'''
 
 
 def norm_shape(shape):
-    '''
-    Normalize numpy array shapes so they're always expressed as a tuple, 
+    """
+    Normalize numpy array shapes so they're always expressed as a tuple,
     even for one-dimensional shapes.
-     
+
     Parameters
         shape - an int, or a tuple of ints
-     
+
     Returns
         a shape tuple
-    '''
+    """
     try:
         i = int(shape)
-        return (i,)
+        return i,
     except TypeError:
         # shape was not a number
         pass
@@ -303,22 +285,22 @@ def norm_shape(shape):
 
 
 def sliding_window(a, ws, ss=None, flatten=True):
-    '''
+    """
     Return a sliding window over a in any number of dimensions
-     
+
     Parameters:
         a  - an n-dimensional numpy array
-        ws - an int (a is 1D) or tuple (a is 2D or greater) representing the size 
+        ws - an int (a is 1D) or tuple (a is 2D or greater) representing the size
              of each dimension of the window
-        ss - an int (a is 1D) or tuple (a is 2D or greater) representing the 
+        ss - an int (a is 1D) or tuple (a is 2D or greater) representing the
              amount to slide the window in each dimension. If not specified, it
              defaults to ws.
-        flatten - if True, all slices are flattened, otherwise, there is an 
+        flatten - if True, all slices are flattened, otherwise, there is an
                   extra dimension for each dimension of the input.
-     
+
     Returns
         an array containing each n-dimensional window from a
-    '''
+    """
 
     if None is ss:
         # ss was not provided. the windows will not overlap in any direction.
@@ -335,34 +317,33 @@ def sliding_window(a, ws, ss=None, flatten=True):
     # ensure that ws, ss, and a.shape all have the same number of dimensions
     ls = [len(shape), len(ws), len(ss)]
     if 1 != len(set(ls)):
-        raise ValueError( \
-            'a.shape, ws and ss must all have the same length. They were %s' % str(ls))
+        raise ValueError('a.shape, ws and ss must all have the same length. They were %s' % str(ls))
 
     # ensure that ws is smaller than a in every dimension
     if np.any(ws > shape):
-        raise ValueError( \
+        raise ValueError(
             'ws cannot be larger than a in any dimension.a.shape was %s and ws was %s' % (str(a.shape), str(ws)))
 
     # how many slices will there be in each dimension?
-    newshape = norm_shape(((shape - ws) // ss) + 1)
-    # the shape of the strided array will be the number of slices in each dimension
+    new_shape = norm_shape(((shape - ws) // ss) + 1)
+    # the shape of the stridden array will be the number of slices in each dimension
     # plus the shape of the window (tuple addition)
-    newshape += norm_shape(ws)
+    new_shape += norm_shape(ws)
     # the strides tuple will be the array's strides multiplied by step size, plus
     # the array's strides (tuple addition)
-    newstrides = norm_shape(np.array(a.strides) * ss) + a.strides
-    strided = ast(a, shape=newshape, strides=newstrides)
+    new_strides = norm_shape(np.array(a.strides) * ss) + a.strides
+    stridden = ast(a, shape=new_shape, strides=new_strides)
     if not flatten:
-        return strided
+        return stridden
 
-    # Collapse strided so that it has one more dimension than the window.  I.e.,
+    # Collapse stridden so that it has one more dimension than the window.  I.e.,
     # the new array is a flat list of slices.
     meat = len(ws) if ws.shape else 0
-    firstdim = (np.product(newshape[:-meat]),) if ws.shape else ()
-    dim = firstdim + (newshape[-meat:])
+    first_dim = (np.product(new_shape[:-meat]),) if ws.shape else ()
+    dim = first_dim + (new_shape[-meat:])
     # remove any dimensions with size 1
     dim = filter(lambda i: i != 1, dim)
-    return strided.reshape(dim)
+    return stridden.reshape(dim)
 
 
 if __name__ == "__main__":

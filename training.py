@@ -8,16 +8,16 @@ V = TRAINING_VARIABLES.VARS()
 
 
 def main():
-    ''' Load training data '''
+    # Load training data
     # Input: Data_type, generate new windows, oversampling, viterbi training
-    DATA_TYPE = "training"
-    GENERATE_NEW_WINDOWS = True
-    OVERSAMPLING = True
-    VITERBI = False
-    data_set = get_data_set("training", GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
+    data_type = "training"
+    generate_new_windows = True
+    oversampling = True
+    viterbi = False
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH)
     data_set.shuffle_data_set()
 
-    ''' Create network '''
+    # Create network
     cnn = ConvolutionalNeuralNetwork()
     cnn.set_data_set(data_set)
     cnn.train_network()
@@ -27,11 +27,11 @@ def main():
 
     # Unshuffled data set
     # Input: Testing, generate new windows, oversampling, viterbi training
-    DATA_TYPE = "training"
-    GENERATE_NEW_WINDOWS = True
-    OVERSAMPLING = False
-    VITERBI = True
-    data_set = get_data_set("training", GENERATE_NEW_WINDOWS, OVERSAMPLING, VITERBI)
+    data_type = "training"
+    generate_new_windows = True
+    oversampling = False
+    viterbi = True
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH)
     cnn.load_model()
     # Data set and number of samples
     actual, predictions = cnn.get_viterbi_data(data_set, V.VITERBI_LENGTH_OF_TRANSITION_DATA)

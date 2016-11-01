@@ -10,28 +10,29 @@ from external_modules.detect_peaks import detect_peaks
 from tools.pandas_helpers import write_selected_columns_to_file
 
 
-def create_synchronized_back_and_thigh_file_for_subject(folder, s_id):
+def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True):
+    from os.path import splitext
     import subprocess
 
     omconvert = "./private_data/conversion_scripts/omconvert/omconvert"
     timesync = "./private_data/conversion_scripts/timesync/timesync"
 
-    back_cwa = glob.glob(folder + "/*_BACK_*" + s_id + ".cwa")[0]
-    thigh_cwa = glob.glob(folder + "/*_THIGH_*" + s_id + ".cwa")[0]
+    master_wav = splitext(master_cwa)[0] + ".wav"
+    slave_wav = splitext(slave_cwa)[0] + ".wav"
 
-    back_wav = folder + '/' + s_id + "_back.wav"
-    thigh_wav = folder + '/' + s_id + "_thigh.wav"
+    # Create wav for master sensor
+    subprocess.call([omconvert, master_cwa, "-out", master_wav])
 
-    synchronized_csv = folder + '/' + s_id + "_thigh.resampled.csv"
-
-    # Create wav and CSV for back sensor
-    subprocess.call([omconvert, back_cwa, "-out", back_wav, "-csv-file", folder + '/' + s_id + "_back.csv"])
-
-    # Create wav for thigh sensor
-    subprocess.call([omconvert, thigh_cwa, "-out", thigh_wav])
+    # Create wav for slave sensor
+    subprocess.call([omconvert, slave_cwa, "-out", slave_wav])
 
     # Synchronize them and make them a CSV
-    subprocess.call([timesync, back_wav, thigh_wav, "-csv", synchronized_csv])
+    subprocess.call([timesync, master_wav, slave_wav, "-csv", output_csv])
+
+    if clean_up:
+        print("Deleting wav files")
+        subprocess.call(["rm", master_wav])
+        subprocess.call(["rm", slave_wav])
 
 
 def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
@@ -151,7 +152,9 @@ def convert_string_labels_to_numbers(label_list):
 
 
 def main():
-    subject_id = '004'
+    subject_id = '009'
+    master_sensor_codeword = "UPPERBACK"
+    thigh_sensor_codeword = "THIGH"
     subject_folder = 'private_data/conversion_scripts/annotated_data/' + subject_id
     folder_and_subject_id = subject_folder + '/' + subject_id
 
@@ -193,15 +196,17 @@ def main():
     print("Reading sensor data ...")
 
     a = time()
-    synchronized_csv_suffix = '_thigh.resampled.csv'
+    synchronized_csv = subject_folder + '/' + subject_id + "_synchronized.csv"
     try:
-        sensor_readings = pd.read_csv(folder_and_subject_id + synchronized_csv_suffix, parse_dates=[0],
+        sensor_readings = pd.read_csv(synchronized_csv, parse_dates=[0],
                                       header=None)
     except IOError:
         print("Synchronized sensor data not found. Creating synchronized data.")
-        create_synchronized_back_and_thigh_file_for_subject(subject_folder, subject_id)
+        master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+        slave_cwa = glob.glob(subject_folder + "/*_" + thigh_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+        create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_csv)
         print("Conversion finished. Reading converted data.")
-        sensor_readings = pd.read_csv(folder_and_subject_id + synchronized_csv_suffix, parse_dates=[0],
+        sensor_readings = pd.read_csv(synchronized_csv, parse_dates=[0],
                                       header=None)
 
     b = time()
@@ -258,28 +263,24 @@ def main():
     print("Created 'label' column in", b - a, "seconds")
 
     # Write the results to csv
-    labeled_sensor_readings = labeled_sensor_readings[
-        ['Time', 'Master-X', 'Master-Y', 'Master-Z', 'Slave-X', 'Slave-Y', 'Slave-Z', 'label']]
-
-    print("Writing results to CSV")
+    print("Writing results to CSVs")
     a = time()
-    labeled_sensor_readings.to_csv(folder_and_subject_id + '.raw-labeled.csv')
 
-    back_file_path = folder_and_subject_id + "_Axivity_BACK_Back.csv"
-    thigh_file_path = folder_and_subject_id + "_Axivity_THIGH_RIGHT.csv"
-    label_file_path = folder_and_subject_id + "_GoPro_LAB_All.csv"
+    master_csv_file_path = folder_and_subject_id + "_Axivity_BACK_Back.csv"
+    slave_csv_file_path = folder_and_subject_id + "_Axivity_THIGH_Right.csv"
+    label_csv_file_path = folder_and_subject_id + "_GoPro_LAB_All.csv"
 
-    back_columns = ["Master-X", "Master-Y", "Master-Z"]
-    thigh_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
+    master_columns = ["Master-X", "Master-Y", "Master-Z"]
+    slave_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
     label_columns = ["label"]
 
-    write_selected_columns_to_file(labeled_sensor_readings, back_columns, back_file_path)
-    write_selected_columns_to_file(labeled_sensor_readings, thigh_columns, thigh_file_path)
-    write_selected_columns_to_file(labeled_sensor_readings, label_columns, label_file_path)
+    write_selected_columns_to_file(labeled_sensor_readings, master_columns, master_csv_file_path)
+    write_selected_columns_to_file(labeled_sensor_readings, slave_columns, slave_csv_file_path)
+    write_selected_columns_to_file(labeled_sensor_readings, label_columns, label_csv_file_path)
 
     b = time()
 
-    print("Wrote 'labeled_sensor_readings' to csv in", b - a)
+    print("Wrote 'labeled_sensor_readings' to CSV files in", b - a)
 
 
 if __name__ == "__main__":
