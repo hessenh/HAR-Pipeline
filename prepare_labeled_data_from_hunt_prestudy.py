@@ -72,15 +72,13 @@ def set_header_names_for_data_generated_by_omconvert_script(data_frame):
         inplace=True)
 
 
-def find_first_and_second_clap_times_from_sensor_channel(channel_data, sampling_frequency, mph=5, valley=True,
-                                                         required_claps=3):
+def find_claps_from_sensor_data(channel_data, sampling_frequency, mph=5, valley=True,
+                                required_claps=3):
     peaks = detect_peaks(channel_data, mph=mph, valley=valley)
 
-    claps = find_claps_from_peaks(peaks, required_claps=required_claps, sampling_frequency=sampling_frequency)
-    end_of_first_claps = claps[0][1]
-    start_of_second_claps = claps[1][0]
+    clap_times = find_claps_from_peaks(peaks, required_claps=required_claps, sampling_frequency=sampling_frequency)
 
-    return end_of_first_claps, start_of_second_claps
+    return clap_times
 
 
 def combine_event_files_into_one_and_save(folder, s_id):
@@ -150,15 +148,16 @@ def convert_string_labels_to_numbers(label_list):
 
 
 def main():
-    subject_id = '001'
-    master_sensor_codeword = "BACK"
-    thigh_sensor_codeword = "THIGH"
-    starting_heel_drops = 2
-    ending_heel_drops = 2
+    subject_id = '005'
+
+    master_sensor_codeword, slave_sensor_codeword = "UPPERBACK", "THIGH"
+    starting_heel_drops, ending_heel_drops = 3, 3
+    heel_drop_amplitude = 5
+
     subject_folder = 'private_data/conversion_scripts/annotated_data/' + subject_id
     folder_and_subject_id = subject_folder + '/' + subject_id
 
-    sampling_frequency = 200  # Sampling frequency in hertz
+    sampling_frequency = 100  # Sampling frequency in hertz
 
     print("Reading events ...")
     a = time()
@@ -194,7 +193,7 @@ def main():
         events = events.drop(events[events.end > last_heeldrop].index)
         print("Length of annotated data after removing heel drops:", last_heeldrop, "seconds")
 
-    print("Reading sensor data ...")
+    print("\nReading sensor data ...")
 
     a = time()
     synchronized_csv = subject_folder + '/' + subject_id + "_synchronized.csv"
@@ -204,7 +203,7 @@ def main():
     except IOError:
         print("Synchronized sensor data not found. Creating synchronized data.")
         master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-        slave_cwa = glob.glob(subject_folder + "/*_" + thigh_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+        slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
         create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_csv)
         print("Conversion finished. Reading converted data.")
         sensor_readings = pd.read_csv(synchronized_csv, parse_dates=[0],
@@ -219,35 +218,36 @@ def main():
     # First find the value range between the 3 starting and ending hand claps
     sx = sensor_readings['Slave-X']
 
-    first_clap_index, ending_clap_index = find_first_and_second_clap_times_from_sensor_channel(sx,
-                                                                                               sampling_frequency,
-                                                                                               mph=8,
-                                                                                               valley=True,
-                                                                                               required_claps=min(
-                                                                                                   starting_heel_drops,
-                                                                                                   ending_heel_drops))
-    print("Found claps in sensor data")
+    claps = find_claps_from_sensor_data(sx,
+                                        sampling_frequency,
+                                        mph=heel_drop_amplitude,
+                                        valley=True,
+                                        required_claps=starting_heel_drops)
 
-    print("First clap at", first_clap_index / sampling_frequency, "seconds")
-    session_length = (ending_clap_index - first_clap_index) / sampling_frequency
-    print("Session length between start and end claps:", session_length, "seconds")
+    first_clap_index = claps[0][1]
+    print("Found heel drops in sensor data")
 
-    #  create the subset
-    labeled_sensor_readings = sensor_readings[first_clap_index:ending_clap_index]
-    print("Created 'labeled_sensor_readings' from sensor data")
+    print("End of first heel drops at", first_clap_index / sampling_frequency, "seconds, index", first_clap_index)
 
-    # Adding a column that counts the seconds between the beginning of the time series and the current data point.
-    # This is later used to find the matching label in the events file
-    labeled_sensor_readings = labeled_sensor_readings.reset_index(drop=True)
-    start_time = labeled_sensor_readings.Time[0]
+    sensor_readings = sensor_readings[first_clap_index:]
+    sensor_readings = sensor_readings.reset_index(drop=True)
+    print("Removed sensor readings up to and including heel drops")
 
-    print("Making 'seconds_list' ...")
+    start_time = sensor_readings.Time[0]
+
+    print("Extracting sensor data to create labels for ...")
     a = time()
-    seconds_list = [(row - start_time).total_seconds() for row in labeled_sensor_readings.Time]
-    b = time()
-    print("Made seconds list in", b - a, "seconds")
+    try:
+        end_of_last_event = last_heeldrop
+    except NameError:
+        end_of_last_event = events.tail(1)['end']
 
-    print("Creating label list for each data point ...")
+    seconds_list = [(current_time - start_time).total_seconds() for current_time in
+                    sensor_readings.Time[:int(end_of_last_event * 1.05 * sampling_frequency)]]
+    b = time()
+    print("Extracted data in", b - a, "seconds")
+
+    print("Creating label list for sensor data ...")
     events_labels = events.type
     events_end_times = events.end
 
@@ -260,7 +260,8 @@ def main():
     b = time()
     print("Created label list in", b - a, "seconds")
 
-    assert len(labels_for_each_data_point_in_seconds_list) == labeled_sensor_readings.shape[0]
+    labeled_sensor_readings = sensor_readings[:len(labels_for_each_data_point_in_seconds_list)].reindex()
+    print(len(labels_for_each_data_point_in_seconds_list))
 
     print("Creating label column ...")
     a = time()
@@ -273,8 +274,8 @@ def main():
     print("Writing results to CSVs")
     a = time()
 
-    master_csv_file_path = folder_and_subject_id + "_Axivity_BACK_Back.csv"
-    slave_csv_file_path = folder_and_subject_id + "_Axivity_THIGH_Right.csv"
+    master_csv_file_path = folder_and_subject_id + "_Axivity_" + master_sensor_codeword + "_Back.csv"
+    slave_csv_file_path = folder_and_subject_id + "_Axivity_" + slave_sensor_codeword + "_Right.csv"
     label_csv_file_path = folder_and_subject_id + "_GoPro_LAB_All.csv"
 
     master_columns = ["Master-X", "Master-Y", "Master-Z"]
