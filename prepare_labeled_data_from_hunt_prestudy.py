@@ -3,6 +3,7 @@ from __future__ import division, print_function
 
 import glob
 from time import time
+import json
 
 import pandas as pd
 
@@ -148,9 +149,9 @@ def convert_string_labels_to_numbers(label_list):
 
 
 def main():
-    subject_id = '005'
+    subject_id = '001'
 
-    master_sensor_codeword, slave_sensor_codeword = "UPPERBACK", "THIGH"
+    master_sensor_codeword, slave_sensor_codeword = "BACK", "THIGH"
     starting_heel_drops, ending_heel_drops = 3, 3
     heel_drop_amplitude = 5
 
@@ -158,6 +159,16 @@ def main():
     folder_and_subject_id = subject_folder + '/' + subject_id
 
     sampling_frequency = 100  # Sampling frequency in hertz
+
+    try:
+        with open(folder_and_subject_id + "_config.json") as json_file:
+            config_dict = json.load(json_file)
+            heel_drop_amplitude = config_dict["heel_drop_amplitude"]
+            starting_heel_drops = config_dict["starting_heel_drops"]
+            ending_heel_drops = config_dict["ending_heel_drops"]
+
+    except IOError:
+        print("Could not find config file. Returning to default configurations")
 
     print("Reading events ...")
     a = time()
