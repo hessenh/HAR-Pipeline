@@ -257,8 +257,11 @@ def main():
 
     events_duration = events.tail(1)['end']
 
+    extra_sampling_from_sensor_readings = 1.05
+
     seconds_list = [(current_time - start_time).total_seconds() for current_time in
-                    sensor_readings.Time[:int(events_duration * 1.05 * sampling_frequency)]]
+                    sensor_readings.Time[
+                    :int(events_duration * extra_sampling_from_sensor_readings * sampling_frequency)]]
     b = time()
     print("Extracted data in", b - a, "seconds")
 
