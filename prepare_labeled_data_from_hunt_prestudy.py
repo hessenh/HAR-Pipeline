@@ -4,6 +4,7 @@ from __future__ import division, print_function
 import glob
 from time import time
 import json
+import os
 
 import pandas as pd
 
@@ -184,9 +185,9 @@ def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, 
 
 
 def main():
-    subject_id = '001'
+    subject_id = '006'
 
-    master_sensor_codeword, slave_sensor_codeword = "BACK", "THIGH"
+    master_sensor_codewords, slave_sensor_codeword = ["BACK"], "THIGH"
     starting_heel_drops, ending_heel_drops = 3, 3
     heel_drop_amplitude = 5
 
@@ -204,109 +205,116 @@ def main():
             heel_drop_amplitude = config_dict["heel_drop_amplitude"]
             starting_heel_drops = config_dict["starting_heel_drops"]
             ending_heel_drops = config_dict["ending_heel_drops"]
+            master_sensor_codewords = config_dict["master_sensor_codewords"]
 
     except IOError:
         print("Could not find config file. Returning to default configurations")
 
     events = extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
 
-    print("\nReading sensor data ...")
+    for master_sensor_codeword in master_sensor_codewords:
+        print("\nReading sensor data ...")
 
-    a = time()
-    synchronized_csv = subject_folder + '/' + subject_id + "_synchronized.csv"
-    try:
-        sensor_readings = pd.read_csv(synchronized_csv, parse_dates=[0],
-                                      header=None)
-    except IOError:
-        print("Synchronized sensor data not found. Creating synchronized data.")
-        master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-        slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-        create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_csv)
-        print("Conversion finished. Reading converted data.")
-        sensor_readings = pd.read_csv(synchronized_csv, parse_dates=[0],
-                                      header=None)
+        a = time()
+        sync_filename = subject_id + "_" + master_sensor_codeword + "_" + slave_sensor_codeword + "_synchronized.csv"
+        sync_path = subject_folder + '/' + sync_filename
 
-    b = time()
-    print("Read sensor data in", b - a)
+        try:
+            sensor_readings = pd.read_csv(sync_path, parse_dates=[0], header=None)
+        except IOError:
+            print("Synchronized sensor data file", sync_path, "not found. Creating synchronized data.")
+            master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+            slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+            create_synchronized_file_for_subject(master_cwa, slave_cwa, sync_path)
+            print("Conversion finished. Reading converted data.")
+            sensor_readings = pd.read_csv(sync_path, parse_dates=[0], header=None)
 
-    set_header_names_for_data_generated_by_omconvert_script(sensor_readings)
+        b = time()
+        print("Read sensor data in", b - a)
 
-    print("Finding claps ...")
-    # First find the value range between the 3 starting and ending hand claps
-    sx = sensor_readings['Slave-X']
+        set_header_names_for_data_generated_by_omconvert_script(sensor_readings)
 
-    claps = find_claps_from_sensor_data(sx,
-                                        sampling_frequency,
-                                        mph=heel_drop_amplitude,
-                                        valley=True,
-                                        required_claps=starting_heel_drops)
+        print("Finding claps ...")
+        # First find the value range between the 3 starting and ending hand claps
+        sx = sensor_readings['Slave-X']
 
-    first_clap_index = claps[0][1]
-    print("Found heel drops in sensor data")
+        claps = find_claps_from_sensor_data(sx,
+                                            sampling_frequency,
+                                            mph=heel_drop_amplitude,
+                                            valley=True,
+                                            required_claps=starting_heel_drops)
 
-    print("End of first heel drops at", first_clap_index / sampling_frequency, "seconds, index", first_clap_index)
+        first_clap_index = claps[0][1]
+        print("Found heel drops in sensor data")
 
-    sensor_readings = sensor_readings[first_clap_index:]
-    sensor_readings = sensor_readings.reset_index(drop=True)
-    print("Removed sensor readings up to and including heel drops")
+        print("End of first heel drops at", first_clap_index / sampling_frequency, "seconds, index", first_clap_index)
 
-    start_time = sensor_readings.Time[0]
+        sensor_readings = sensor_readings[first_clap_index:]
+        sensor_readings = sensor_readings.reset_index(drop=True)
+        print("Removed sensor readings up to and including heel drops")
 
-    print("Extracting sensor data to create labels for ...")
-    a = time()
+        start_time = sensor_readings.Time[0]
 
-    events_duration = events.tail(1)['end']
+        print("Extracting sensor data to create labels for ...")
+        a = time()
 
-    extra_sampling_from_sensor_readings = 1.05
+        events_duration = events.tail(1)['end']
 
-    seconds_list = [(current_time - start_time).total_seconds() for current_time in
-                    sensor_readings.Time[
-                    :int(events_duration * extra_sampling_from_sensor_readings * sampling_frequency)]]
-    b = time()
-    print("Extracted data in", b - a, "seconds")
+        extra_sampling_from_sensor_readings = 1.05
 
-    print("Creating label list for sensor data ...")
-    events_labels = events.type
-    events_end_times = events.end
+        seconds_list = [(current_time - start_time).total_seconds() for current_time in
+                        sensor_readings.Time[
+                        :int(events_duration * extra_sampling_from_sensor_readings * sampling_frequency)]]
+        b = time()
+        print("Extracted data in", b - a, "seconds")
 
-    a = time()
-    labels_for_each_data_point_in_seconds_list = make_labels_for_timestamps(seconds_list, events_labels,
-                                                                            events_end_times)
-    labels_for_each_data_point_in_seconds_list = convert_string_labels_to_numbers(
-        labels_for_each_data_point_in_seconds_list)
+        print("Creating label list for sensor data ...")
+        events_labels = events.type
+        events_end_times = events.end
 
-    b = time()
-    print("Created label list in", b - a, "seconds")
+        a = time()
+        labels_for_each_data_point_in_seconds_list = make_labels_for_timestamps(seconds_list, events_labels,
+                                                                                events_end_times)
+        labels_for_each_data_point_in_seconds_list = convert_string_labels_to_numbers(
+            labels_for_each_data_point_in_seconds_list)
 
-    labeled_sensor_readings = sensor_readings[:len(labels_for_each_data_point_in_seconds_list)].reindex()
-    print("Length of label list:", len(labels_for_each_data_point_in_seconds_list))
+        b = time()
+        print("Created label list in", b - a, "seconds")
 
-    print("Creating label column ...")
-    a = time()
-    labeled_sensor_readings['label'] = pd.Series(labels_for_each_data_point_in_seconds_list,
-                                                 index=labeled_sensor_readings.index)
-    b = time()
-    print("Created 'label' column in", b - a, "seconds")
+        labeled_sensor_readings = sensor_readings[:len(labels_for_each_data_point_in_seconds_list)].reindex()
+        print("Length of label list:", len(labels_for_each_data_point_in_seconds_list))
 
-    # Write the results to csv
-    print("Writing results to CSVs")
-    a = time()
+        print("Creating label column ...")
+        a = time()
+        labeled_sensor_readings['label'] = pd.Series(labels_for_each_data_point_in_seconds_list,
+                                                     index=labeled_sensor_readings.index)
+        b = time()
+        print("Created 'label' column in", b - a, "seconds")
 
-    master_csv_file_path = folder_and_subject_id + "_Axivity_" + master_sensor_codeword + "_Back.csv"
-    slave_csv_file_path = folder_and_subject_id + "_Axivity_" + slave_sensor_codeword + "_Right.csv"
-    label_csv_file_path = folder_and_subject_id + "_GoPro_LAB_All.csv"
+        # Write the results to csv
+        print("Writing results to CSVs")
+        a = time()
 
-    master_columns = ["Master-X", "Master-Y", "Master-Z"]
-    slave_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
-    label_columns = ["label"]
+        path_to_csv_folder_using_this_master_sensor = subject_folder + "/" + master_sensor_codeword
 
-    write_selected_columns_to_file(labeled_sensor_readings, master_columns, master_csv_file_path)
-    write_selected_columns_to_file(labeled_sensor_readings, slave_columns, slave_csv_file_path)
-    write_selected_columns_to_file(labeled_sensor_readings, label_columns, label_csv_file_path)
+        if not os.path.exists(path_to_csv_folder_using_this_master_sensor):
+            os.makedirs(path_to_csv_folder_using_this_master_sensor)
 
-    b = time()
+        master_csv_file_path = path_to_csv_folder_using_this_master_sensor + "/" + subject_id + "_Axivity_" + master_sensor_codeword + "_Back.csv"
+        slave_csv_file_path = path_to_csv_folder_using_this_master_sensor + "/" + subject_id + "_Axivity_" + slave_sensor_codeword + "_Right.csv"
+        label_csv_file_path = path_to_csv_folder_using_this_master_sensor + "/" + subject_id + "_GoPro_LAB_All.csv"
 
-    print("Wrote 'labeled_sensor_readings' to CSV files in", b - a)
+        master_columns = ["Master-X", "Master-Y", "Master-Z"]
+        slave_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
+        label_columns = ["label"]
+
+        write_selected_columns_to_file(labeled_sensor_readings, master_columns, master_csv_file_path)
+        write_selected_columns_to_file(labeled_sensor_readings, slave_columns, slave_csv_file_path)
+        write_selected_columns_to_file(labeled_sensor_readings, label_columns, label_csv_file_path)
+
+        b = time()
+
+        print("Wrote 'labeled_sensor_readings' to CSV files in", b - a)
 
 
 if __name__ == "__main__":
