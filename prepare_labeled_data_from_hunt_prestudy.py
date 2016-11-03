@@ -146,6 +146,43 @@ def convert_string_labels_to_numbers(label_list):
     return [label_to_number_dict[label] for label in label_list]
 
 
+def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression):
+    print("Reading events ...")
+
+    a = time()
+    try:
+        events = pd.read_csv(events_csv, sep=',')
+    except IOError:
+        print("Combined events file not found. Creating events file from separate files.")
+        events = combine_event_files_into_one_and_save(event_files_glob_expression, events_csv)
+    b = time()
+    print("Read events in", b - a)
+
+    events = events[['start', 'end', 'duration', 'type']]
+
+    print("\nFinding heel drops in the events file")
+    if starting_heel_drops:
+        last_starting_heel_drop_index = starting_heel_drops - 1
+
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][last_starting_heel_drop_index:]
+        offset = heel_drop_events.iloc[0]['end']
+        events = events.drop(events[events.end <= offset].index)
+
+        events['start'] = events['start'] - offset
+        events['end'] = events['end'] - offset
+        print("First heel drops end at", offset, "seconds")
+
+    if ending_heel_drops:
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
+        last_heel_drop = heel_drop_events.iloc[0]['start']
+        events = events.drop(events[events.end > last_heel_drop].index)
+
+    end_ = events.tail(1)['end'].iloc[0]
+    print("Length of annotated data after removing heel drops:", end_, "seconds")
+
+    return events
+
+
 def main():
     subject_id = '001'
 
@@ -267,43 +304,6 @@ def main():
     b = time()
 
     print("Wrote 'labeled_sensor_readings' to CSV files in", b - a)
-
-
-def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression):
-    print("Reading events ...")
-
-    a = time()
-    try:
-        events = pd.read_csv(events_csv, sep=',')
-    except IOError:
-        print("Combined events file not found. Creating events file from separate files.")
-        events = combine_event_files_into_one_and_save(event_files_glob_expression, events_csv)
-    b = time()
-    print("Read events in", b - a)
-
-    events = events[['start', 'end', 'duration', 'type']]
-
-    print("\nFinding heel drops in the events file")
-    if starting_heel_drops:
-        last_starting_heel_drop_index = starting_heel_drops - 1
-
-        heel_drop_events = events.loc[events['type'] == 'heel drop'][last_starting_heel_drop_index:]
-        offset = heel_drop_events.iloc[0]['end']
-        events = events.drop(events[events.end <= offset].index)
-
-        events['start'] = events['start'] - offset
-        events['end'] = events['end'] - offset
-        print("First heel drops end at", offset, "seconds")
-
-    if ending_heel_drops:
-        heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
-        last_heel_drop = heel_drop_events.iloc[0]['start']
-        events = events.drop(events[events.end > last_heel_drop].index)
-
-    end_ = events.tail(1)['end'].iloc[0]
-    print("Length of annotated data after removing heel drops:", end_, "seconds")
-
-    return events
 
 
 if __name__ == "__main__":
