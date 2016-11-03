@@ -82,31 +82,29 @@ def find_claps_from_sensor_data(channel_data, sampling_frequency, mph=5, valley=
     return clap_times
 
 
-def combine_event_files_into_one_and_save(folder, s_id):
-    path = folder + '/' + s_id + "_FreeLiving_Event_"
-
-    filenames = sorted(glob.glob(path + "*.txt"))
+def combine_event_files_into_one_and_save(event_files_glob_expression, output_file):
+    filenames = sorted(glob.glob(event_files_glob_expression))
 
     dfs = []
-    rolling_offset = 0
+    rolling_time_offset = 0
     first = True
     for filename in filenames:
         new = pd.read_csv(filename, sep='\t')
         if first:
             dfs.append(new)
-            rolling_offset = new.tail(1).iloc[0]['end']
+            rolling_time_offset = new.tail(1).iloc[0]['end']
             first = False
         else:
-            new['start'] = new['start'] + rolling_offset
-            new['end'] = new['end'] + rolling_offset
-            rolling_offset = new.tail(1).iloc[0]['end']
+            new['start'] = new['start'] + rolling_time_offset
+            new['end'] = new['end'] + rolling_time_offset
+            rolling_time_offset = new.tail(1).iloc[0]['end']
             dfs.append(new)
 
     events_data_frame = pd.concat(dfs, ignore_index=True)
 
     events_data_frame = events_data_frame[['start', 'end', 'duration', 'type']]
 
-    events_data_frame.to_csv(folder + '/' + s_id + "_events.csv")
+    events_data_frame.to_csv(output_file)
 
     return events_data_frame
 
@@ -160,6 +158,9 @@ def main():
 
     sampling_frequency = 100  # Sampling frequency in hertz
 
+    events_csv = folder_and_subject_id + '_events.csv'
+    event_files_glob_expression = folder_and_subject_id + "_FreeLiving_Event_*.txt"
+
     try:
         with open(folder_and_subject_id + "_config.json") as json_file:
             config_dict = json.load(json_file)
@@ -170,39 +171,7 @@ def main():
     except IOError:
         print("Could not find config file. Returning to default configurations")
 
-    print("Reading events ...")
-    a = time()
-
-    try:
-        events = pd.read_csv(folder_and_subject_id + '_events.csv', sep=',')
-    except IOError:
-        print("Combined events file not found. Creating events file from separate files.")
-        events = combine_event_files_into_one_and_save(subject_folder, subject_id)
-
-    b = time()
-    print("Read events in", b - a)
-
-    events = events[['start', 'end', 'duration', 'type']]
-
-    print("\nFinding heel drops in the events file")
-
-    if starting_heel_drops:
-        last_starting_heel_drop_index = starting_heel_drops - 1
-
-        heel_drop_events = events.loc[events['type'] == 'heel drop'][last_starting_heel_drop_index:]
-        offset = heel_drop_events.iloc[0]['end']
-        events = events.drop(events[events.end <= offset].index)
-
-        events['start'] = events['start'] - offset
-        events['end'] = events['end'] - offset
-        print("First heel drops end at", offset, "seconds")
-
-    # remove the last heel drops
-    if ending_heel_drops:
-        heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
-        last_heeldrop = heel_drop_events.iloc[0]['start']
-        events = events.drop(events[events.end > last_heeldrop].index)
-        print("Length of annotated data after removing heel drops:", last_heeldrop, "seconds")
+    events = extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
 
     print("\nReading sensor data ...")
 
@@ -248,13 +217,11 @@ def main():
 
     print("Extracting sensor data to create labels for ...")
     a = time()
-    try:
-        end_of_last_event = last_heeldrop
-    except NameError:
-        end_of_last_event = events.tail(1)['end']
+
+    events_duration = events.tail(1)['end']
 
     seconds_list = [(current_time - start_time).total_seconds() for current_time in
-                    sensor_readings.Time[:int(end_of_last_event * 1.05 * sampling_frequency)]]
+                    sensor_readings.Time[:int(events_duration * 1.05 * sampling_frequency)]]
     b = time()
     print("Extracted data in", b - a, "seconds")
 
@@ -272,7 +239,7 @@ def main():
     print("Created label list in", b - a, "seconds")
 
     labeled_sensor_readings = sensor_readings[:len(labels_for_each_data_point_in_seconds_list)].reindex()
-    print(len(labels_for_each_data_point_in_seconds_list))
+    print("Length of label list:", len(labels_for_each_data_point_in_seconds_list))
 
     print("Creating label column ...")
     a = time()
@@ -300,6 +267,43 @@ def main():
     b = time()
 
     print("Wrote 'labeled_sensor_readings' to CSV files in", b - a)
+
+
+def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression):
+    print("Reading events ...")
+
+    a = time()
+    try:
+        events = pd.read_csv(events_csv, sep=',')
+    except IOError:
+        print("Combined events file not found. Creating events file from separate files.")
+        events = combine_event_files_into_one_and_save(event_files_glob_expression, events_csv)
+    b = time()
+    print("Read events in", b - a)
+
+    events = events[['start', 'end', 'duration', 'type']]
+
+    print("\nFinding heel drops in the events file")
+    if starting_heel_drops:
+        last_starting_heel_drop_index = starting_heel_drops - 1
+
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][last_starting_heel_drop_index:]
+        offset = heel_drop_events.iloc[0]['end']
+        events = events.drop(events[events.end <= offset].index)
+
+        events['start'] = events['start'] - offset
+        events['end'] = events['end'] - offset
+        print("First heel drops end at", offset, "seconds")
+
+    if ending_heel_drops:
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
+        last_heel_drop = heel_drop_events.iloc[0]['start']
+        events = events.drop(events[events.end > last_heel_drop].index)
+
+    end_ = events.tail(1)['end'].iloc[0]
+    print("Length of annotated data after removing heel drops:", end_, "seconds")
+
+    return events
 
 
 if __name__ == "__main__":
