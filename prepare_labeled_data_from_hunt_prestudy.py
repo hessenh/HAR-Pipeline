@@ -3,6 +3,7 @@ from __future__ import division, print_function
 
 import glob
 from time import time
+import json
 
 import pandas as pd
 
@@ -72,59 +73,53 @@ def set_header_names_for_data_generated_by_omconvert_script(data_frame):
         inplace=True)
 
 
-def find_first_and_second_clap_times_from_sensor_channel(channel_data, mph=5, valley=True):
+def find_claps_from_sensor_data(channel_data, sampling_frequency, mph=5, valley=True,
+                                required_claps=3):
     peaks = detect_peaks(channel_data, mph=mph, valley=valley)
 
-    claps = find_claps_from_peaks(peaks)
-    end_of_first_claps = claps[0][1]
-    start_of_second_claps = claps[1][0]
+    clap_times = find_claps_from_peaks(peaks, required_claps=required_claps, sampling_frequency=sampling_frequency)
 
-    return end_of_first_claps, start_of_second_claps
+    return clap_times
 
 
-def combine_event_files_into_one_and_save(folder, s_id):
-    path = folder + '/' + s_id + "_FreeLiving_Event_"
-
-    filenames = sorted(glob.glob(path + "*.txt"))
+def combine_event_files_into_one_and_save(event_files_glob_expression, output_file):
+    filenames = sorted(glob.glob(event_files_glob_expression))
 
     dfs = []
-    rolling_offset = 0
+    rolling_time_offset = 0
     first = True
     for filename in filenames:
         new = pd.read_csv(filename, sep='\t')
         if first:
             dfs.append(new)
-            rolling_offset = new.tail(1).iloc[0]['end']
+            rolling_time_offset = new.tail(1).iloc[0]['end']
             first = False
         else:
-            new['start'] = new['start'] + rolling_offset
-            new['end'] = new['end'] + rolling_offset
-            rolling_offset = new.tail(1).iloc[0]['end']
+            new['start'] = new['start'] + rolling_time_offset
+            new['end'] = new['end'] + rolling_time_offset
+            rolling_time_offset = new.tail(1).iloc[0]['end']
             dfs.append(new)
 
     events_data_frame = pd.concat(dfs, ignore_index=True)
 
     events_data_frame = events_data_frame[['start', 'end', 'duration', 'type']]
 
-    events_data_frame.to_csv(folder + '/' + s_id + "_events.csv")
+    events_data_frame.to_csv(output_file)
 
     return events_data_frame
 
 
-def make_labels_for_points_in_time(data_point_times, labels_list, end_times_list):
-    labels_for_data_points = []
+def make_labels_for_timestamps(timestamps, labels_list, end_times_list):
+    labels_for_timestamps = []
 
-    index_of_data_point_time_to_be_examined = 0
-
-    size_of_times = len(data_point_times)
+    next_timestamp_index = 0
 
     for label, end_time in zip(labels_list, end_times_list):
-        while index_of_data_point_time_to_be_examined < size_of_times \
-                and data_point_times[index_of_data_point_time_to_be_examined] <= end_time:
-            labels_for_data_points.append(label)
-            index_of_data_point_time_to_be_examined += 1
+        while next_timestamp_index < len(timestamps) and timestamps[next_timestamp_index] <= end_time:
+            labels_for_timestamps.append(label)
+            next_timestamp_index += 1
 
-    return labels_for_data_points
+    return labels_for_timestamps
 
 
 def convert_string_labels_to_numbers(label_list):
@@ -151,49 +146,71 @@ def convert_string_labels_to_numbers(label_list):
     return [label_to_number_dict[label] for label in label_list]
 
 
+def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression):
+    print("Reading events ...")
+
+    a = time()
+    try:
+        events = pd.read_csv(events_csv, sep=',')
+    except IOError:
+        print("Combined events file not found. Creating events file from separate files.")
+        events = combine_event_files_into_one_and_save(event_files_glob_expression, events_csv)
+    b = time()
+    print("Read events in", b - a)
+
+    events = events[['start', 'end', 'duration', 'type']]
+
+    print("\nFinding heel drops in the events file")
+    if starting_heel_drops:
+        last_starting_heel_drop_index = starting_heel_drops - 1
+
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][last_starting_heel_drop_index:]
+        offset = heel_drop_events.iloc[0]['end']
+        events = events.drop(events[events.end <= offset].index)
+
+        events['start'] = events['start'] - offset
+        events['end'] = events['end'] - offset
+        print("First heel drops end at", offset, "seconds")
+
+    if ending_heel_drops:
+        heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
+        last_heel_drop = heel_drop_events.iloc[0]['start']
+        events = events.drop(events[events.end > last_heel_drop].index)
+
+    end_ = events.tail(1)['end'].iloc[0]
+    print("Length of annotated data after removing heel drops:", end_, "seconds")
+
+    return events
+
+
 def main():
-    subject_id = '009'
-    master_sensor_codeword = "UPPERBACK"
-    thigh_sensor_codeword = "THIGH"
+    subject_id = '001'
+
+    master_sensor_codeword, slave_sensor_codeword = "BACK", "THIGH"
+    starting_heel_drops, ending_heel_drops = 3, 3
+    heel_drop_amplitude = 5
+
     subject_folder = 'private_data/conversion_scripts/annotated_data/' + subject_id
     folder_and_subject_id = subject_folder + '/' + subject_id
 
     sampling_frequency = 100  # Sampling frequency in hertz
 
-    print("Reading annotations ...")
-    a = time()
+    events_csv = folder_and_subject_id + '_events.csv'
+    event_files_glob_expression = folder_and_subject_id + "_FreeLiving_Event_*.txt"
 
     try:
-        events = pd.read_csv(folder_and_subject_id + '_events.csv', sep=',')
+        with open(folder_and_subject_id + "_config.json") as json_file:
+            config_dict = json.load(json_file)
+            heel_drop_amplitude = config_dict["heel_drop_amplitude"]
+            starting_heel_drops = config_dict["starting_heel_drops"]
+            ending_heel_drops = config_dict["ending_heel_drops"]
+
     except IOError:
-        print("Combined annotations file not found. Creating annotation file from separate files.")
-        events = combine_event_files_into_one_and_save(subject_folder, subject_id)
+        print("Could not find config file. Returning to default configurations")
 
-    b = time()
-    print("Read annotations in", b - a)
+    events = extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
 
-    events = events[['start', 'end', 'duration', 'type']]
-
-    print("\nFinding heel drops in the data")
-    starting_heel_drops = 3
-    ending_heel_drop_index = starting_heel_drops - 1
-
-    heel_drop_events = events.loc[events['type'] == 'heel drop'][ending_heel_drop_index:]
-    offset = heel_drop_events.iloc[0]['end']
-    events = events.drop(events[events.end <= offset].index)
-
-    events['start'] = events['start'] - offset
-    events['end'] = events['end'] - offset
-
-    # remove the last heel drops
-    heel_drop_events = events.loc[events['type'] == 'heel drop'][0:]
-    last_heeldrop = heel_drop_events.iloc[0]['start']
-    events = events.drop(events[events.end > last_heeldrop].index)
-
-    print("First heel drops end at", offset, "seconds")
-    print("Length of annotated data after removing heel drops:", last_heeldrop, "seconds")
-
-    print("Reading sensor data ...")
+    print("\nReading sensor data ...")
 
     a = time()
     synchronized_csv = subject_folder + '/' + subject_id + "_synchronized.csv"
@@ -203,7 +220,7 @@ def main():
     except IOError:
         print("Synchronized sensor data not found. Creating synchronized data.")
         master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-        slave_cwa = glob.glob(subject_folder + "/*_" + thigh_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+        slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
         create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_csv)
         print("Conversion finished. Reading converted data.")
         sensor_readings = pd.read_csv(synchronized_csv, parse_dates=[0],
@@ -218,42 +235,51 @@ def main():
     # First find the value range between the 3 starting and ending hand claps
     sx = sensor_readings['Slave-X']
 
-    first_clap_index, ending_clap_index = find_first_and_second_clap_times_from_sensor_channel(sx, mph=5,
-                                                                                               valley=True)
-    print("Found claps in sensor data")
+    claps = find_claps_from_sensor_data(sx,
+                                        sampling_frequency,
+                                        mph=heel_drop_amplitude,
+                                        valley=True,
+                                        required_claps=starting_heel_drops)
 
-    session_length = (ending_clap_index - first_clap_index) / sampling_frequency
-    print("Session length between start and end claps:", session_length, "seconds")
+    first_clap_index = claps[0][1]
+    print("Found heel drops in sensor data")
 
-    #  create the subset
-    labeled_sensor_readings = sensor_readings[first_clap_index:ending_clap_index]
-    print("Created 'labeled_sensor_readings' from sensor data")
+    print("End of first heel drops at", first_clap_index / sampling_frequency, "seconds, index", first_clap_index)
 
-    # Adding a column that counts the seconds between the beginning of the time series and the current data point.
-    # This is later used to find the matching label in the events file
-    labeled_sensor_readings = labeled_sensor_readings.reset_index(drop=True)
-    start_time = labeled_sensor_readings.Time[0]
+    sensor_readings = sensor_readings[first_clap_index:]
+    sensor_readings = sensor_readings.reset_index(drop=True)
+    print("Removed sensor readings up to and including heel drops")
 
-    print("Making 'seconds_list' ...")
+    start_time = sensor_readings.Time[0]
+
+    print("Extracting sensor data to create labels for ...")
     a = time()
-    seconds_list = [(row - start_time).total_seconds() for row in labeled_sensor_readings.Time]
-    b = time()
-    print("Made seconds list in", b - a, "seconds")
 
-    print("Creating label list for each data point ...")
+    events_duration = events.tail(1)['end']
+
+    extra_sampling_from_sensor_readings = 1.05
+
+    seconds_list = [(current_time - start_time).total_seconds() for current_time in
+                    sensor_readings.Time[
+                    :int(events_duration * extra_sampling_from_sensor_readings * sampling_frequency)]]
+    b = time()
+    print("Extracted data in", b - a, "seconds")
+
+    print("Creating label list for sensor data ...")
     events_labels = events.type
     events_end_times = events.end
 
     a = time()
-    labels_for_each_data_point_in_seconds_list = make_labels_for_points_in_time(seconds_list, events_labels,
-                                                                                events_end_times)
+    labels_for_each_data_point_in_seconds_list = make_labels_for_timestamps(seconds_list, events_labels,
+                                                                            events_end_times)
     labels_for_each_data_point_in_seconds_list = convert_string_labels_to_numbers(
         labels_for_each_data_point_in_seconds_list)
 
     b = time()
     print("Created label list in", b - a, "seconds")
 
-    assert len(labels_for_each_data_point_in_seconds_list) == labeled_sensor_readings.shape[0]
+    labeled_sensor_readings = sensor_readings[:len(labels_for_each_data_point_in_seconds_list)].reindex()
+    print("Length of label list:", len(labels_for_each_data_point_in_seconds_list))
 
     print("Creating label column ...")
     a = time()
@@ -266,8 +292,8 @@ def main():
     print("Writing results to CSVs")
     a = time()
 
-    master_csv_file_path = folder_and_subject_id + "_Axivity_BACK_Back.csv"
-    slave_csv_file_path = folder_and_subject_id + "_Axivity_THIGH_Right.csv"
+    master_csv_file_path = folder_and_subject_id + "_Axivity_" + master_sensor_codeword + "_Back.csv"
+    slave_csv_file_path = folder_and_subject_id + "_Axivity_" + slave_sensor_codeword + "_Right.csv"
     label_csv_file_path = folder_and_subject_id + "_GoPro_LAB_All.csv"
 
     master_columns = ["Master-X", "Master-Y", "Master-Z"]
