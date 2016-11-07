@@ -141,7 +141,8 @@ def convert_string_labels_to_numbers(label_list):
         "cycling (stand)": 14,
         "heel drop": 15,
         "vigorous activity": 16,
-        "non-vigorous activity": 17
+        "non-vigorous activity": 17,
+        "Car": 18                           # TODO: Check with HAR group to see if this labeling of Car is all right.
     }
 
     return [label_to_number_dict[label] for label in label_list]
@@ -185,7 +186,7 @@ def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, 
 
 
 def main():
-    subject_id = '006'
+    subject_id = '008'
 
     master_sensor_codewords, slave_sensor_codeword = ["BACK"], "THIGH"
     starting_heel_drops, ending_heel_drops = 3, 3
