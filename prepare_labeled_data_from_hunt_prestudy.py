@@ -12,21 +12,33 @@ from external_modules.detect_peaks import detect_peaks
 from tools.pandas_helpers import write_selected_columns_to_file
 
 
+def convert_subject_raw_file(input_file, csv_outfile=None, wav_outfile=None):
+    import subprocess
+
+    omconvert = "./private_data/conversion_scripts/omconvert/omconvert"
+
+    command = [omconvert, input_file]
+
+    if csv_outfile is not None:
+        command += ['-csv-file', csv_outfile]
+
+    if wav_outfile is not None:
+        command += ['-out', wav_outfile]
+
+    subprocess.call(command)
+
+
 def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True):
     from os.path import splitext
     import subprocess
 
-    omconvert = "./private_data/conversion_scripts/omconvert/omconvert"
     timesync = "./private_data/conversion_scripts/timesync/timesync"
 
     master_wav = splitext(master_cwa)[0] + ".wav"
     slave_wav = splitext(slave_cwa)[0] + ".wav"
 
-    # Create wav for master sensor
-    subprocess.call([omconvert, master_cwa, "-out", master_wav])
-
-    # Create wav for slave sensor
-    subprocess.call([omconvert, slave_cwa, "-out", slave_wav])
+    convert_subject_raw_file(master_cwa, wav_outfile=master_wav)
+    convert_subject_raw_file(slave_cwa, wav_outfile=slave_wav)
 
     # Synchronize them and make them a CSV
     subprocess.call([timesync, master_wav, slave_wav, "-csv", output_csv])
@@ -186,7 +198,7 @@ def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, 
 
 
 def main():
-    subject_id = '008'
+    subject_id = '001'
 
     master_sensor_codewords, slave_sensor_codeword = ["BACK"], "THIGH"
     starting_heel_drops, ending_heel_drops = 3, 3
