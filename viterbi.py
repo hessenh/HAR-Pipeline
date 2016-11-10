@@ -56,7 +56,7 @@ def generate_emission_probability(observation_path, start_probability):
     emission_probability = np.copy(observations)
     # For each observation
     for j in range(0, len(observations)):  # self.observations_length
-        # Do it for evert state
+        # Do it for every state
         for i in range(0, len(states)):
             emission_probability[j][i] = observations[j][i] / np.exp(start_probability[states[i]])
         s = np.sum(emission_probability[j])
