@@ -8,14 +8,10 @@ import pandas as pd
 V = TRAINING_VARIABLES.VARS()
 
 
-def main():
-    print run_viterbi()
-
-
-def run_viterbi():
+def run_viterbi(prediction_path):
     start_probability = generate_start_probability()
     transition_dictionary = load_obj(V.VITERBI_TRANSITION_DICTIONARY_PATH)
-    emission_probability = generate_emission_probability(V.VITERBI_PREDICTION_PATH_TESTING, start_probability)
+    emission_probability = generate_emission_probability(prediction_path, start_probability)
 
     VITERBI_PATH = [{}]
     path = {}
@@ -224,7 +220,3 @@ def backward(predictions_log, transition_log, number_activities):
             backward_prob[t][act] = prob_t
 
     return backward_prob
-
-
-if __name__ == "__main__":
-    main()

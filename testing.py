@@ -26,10 +26,13 @@ def main():
 
     actual = data_set.labels
     cnn_result = cnn.get_predictions()
-    np.savetxt(V.VITERBI_PREDICTION_PATH_TESTING, cnn_result, delimiter=",")
-    cnn_result = pd.read_csv(V.VITERBI_PREDICTION_PATH_TESTING, header=None, sep='\,', engine='python').as_matrix()
 
-    viterbi_result = run_viterbi()
+    raw_predictions_path = V.VITERBI_PREDICTION_PATH_TESTING
+    np.savetxt(raw_predictions_path, cnn_result, delimiter=",")
+    cnn_result = pd.read_csv(raw_predictions_path, header=None, sep='\,', engine='python').as_matrix()
+
+    viterbi_result = run_viterbi(raw_predictions_path)
+
     np.savetxt(V.VITERBI_RESULT_TESTING, viterbi_result, delimiter=",")
     viterbi_result = pd.read_csv(V.VITERBI_RESULT_TESTING, header=None, sep='\,', engine='python').as_matrix()
 
