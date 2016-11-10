@@ -8,10 +8,10 @@ import pandas as pd
 V = TRAINING_VARIABLES.VARS()
 
 
-def run_viterbi(prediction_path):
+def run_viterbi(raw_cnn_prediction_path):
     start_probability = generate_start_probability()
     transition_dictionary = load_obj(V.VITERBI_TRANSITION_DICTIONARY_PATH)
-    emission_probability = generate_emission_probability(prediction_path, start_probability)
+    emission_probability = generate_emission_probability(raw_cnn_prediction_path, start_probability)
 
     VITERBI_PATH = [{}]
     path = {}
