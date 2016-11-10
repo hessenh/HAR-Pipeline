@@ -199,9 +199,7 @@ def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, 
     return events
 
 
-def main():
-    subject_id = '008'
-
+def extract_back_and_thigh(subject_id='008'):
     master_sensor_codewords, slave_sensor_codeword = ["BACK"], "THIGH"
     starting_heel_drops, ending_heel_drops = 3, 3
     heel_drop_amplitude = 5
@@ -350,5 +348,59 @@ def remove_sensor_data_before_heel_drops(data_frame, most_affected_column, start
     return data_frame
 
 
+def extract_wrist(subject_id):
+    sensor_codeword = "LEFTWRIST"
+
+    starting_heel_drops, ending_heel_drops = 3, 0
+    heel_drop_amplitude = 2
+
+    subject_folder = SUBJECT_DATA_LOCATION + subject_id
+    folder_and_subject_id = subject_folder + '/' + subject_id
+
+    original_sampling_frequency = 100
+    sampling_frequency = 100  # in hertz
+
+    events_csv = folder_and_subject_id + '_events.csv'
+
+    event_files_glob_expression = folder_and_subject_id + "_FreeLiving_Event_*.txt"
+
+    events = extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
+
+    csv_files = glob.glob(subject_folder + "/*_" + sensor_codeword + "_*" + subject_id + ".csv")
+
+    if csv_files:
+        wrist_csv = csv_files[0]
+    else:
+        print("Wrist CSV not found. Converting CWA file to CSV")
+        wrist_cwa = glob.glob(subject_folder + "/*_" + sensor_codeword + "_*" + subject_id + ".cwa")[0]
+        wrist_csv = os.path.splitext(wrist_cwa)[0] + ".csv"
+
+        convert_subject_raw_file(wrist_cwa, csv_outfile=wrist_csv)
+
+    sensor_readings = pd.read_csv(wrist_csv, parse_dates=[0])
+
+    if original_sampling_frequency == 200:
+        sensor_readings = sensor_readings[::2].reindex()
+        print("Original sampling frequency of 200 Hz reduced to 100")
+
+    heel_drop_column = " Accel-Y (g)"
+
+    labeled_sensor_readings = create_labeled_data_frame(sensor_readings, events, heel_drop_column, heel_drop_amplitude,
+                                                        starting_heel_drops, sampling_frequency)
+
+    print("Writing results to CSVs")
+
+    csv_output_folder = subject_folder + "/" + sensor_codeword
+    labeled_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + sensor_codeword + "_Labeled.csv"
+    labeled_columns = ["Accel-X (g)", " Accel-Y (g)", " Accel-Z (g)", "label"]
+
+    if not os.path.exists(csv_output_folder):
+        os.makedirs(csv_output_folder)
+
+    write_selected_columns_to_file(labeled_sensor_readings, labeled_columns, labeled_csv)
+
+    print("Wrote CSV file")
+
+
 if __name__ == "__main__":
-    main()
+    extract_wrist("006")
