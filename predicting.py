@@ -33,7 +33,7 @@ def main():
 
     data_frame = pd.DataFrame(viterbi_result)
 
-    data_frame.to_csv(V.VITERBI_RESULT_PREDICTING)  # TODO: Results are the same every run. Source of error unknown.
+    data_frame.to_csv(V.VITERBI_RESULT_PREDICTING)
 
     print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
 
