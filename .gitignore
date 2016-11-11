@@ -1,6 +1,7 @@
 *
 !/**/
 !*.*
+!Makefile
 
 # Pandas checkpoint files
 .ipynb_checkpoints/

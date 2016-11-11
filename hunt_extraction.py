@@ -2,56 +2,18 @@
 from __future__ import division, print_function
 
 import glob
-from time import time
 import json
-import os
+from time import time
 
+import os
 import pandas as pd
 
 from external_modules.detect_peaks import detect_peaks
+from raw_data_conversion.conversion import convert_subject_raw_file, create_synchronized_file_for_subject, \
+    set_header_names_for_data_generated_by_omconvert_script
 from tools.pandas_helpers import write_selected_columns_to_file
 
-SUBJECT_DATA_LOCATION = 'private_data/conversion_scripts/annotated_data/'
-
-OMCONVERT_LOCATION = "./private_data/conversion_scripts/omconvert/omconvert"
-TIMESYNC_LOCATION = "./private_data/conversion_scripts/timesync/timesync"
-
-
-def convert_subject_raw_file(input_file, csv_outfile=None, wav_outfile=None):
-    import subprocess
-
-    omconvert = OMCONVERT_LOCATION
-
-    command = [omconvert, input_file]
-
-    if csv_outfile is not None:
-        command += ['-csv-file', csv_outfile]
-
-    if wav_outfile is not None:
-        command += ['-out', wav_outfile]
-
-    subprocess.call(command)
-
-
-def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True):
-    from os.path import splitext
-    import subprocess
-
-    timesync = TIMESYNC_LOCATION
-
-    master_wav = splitext(master_cwa)[0] + ".wav"
-    slave_wav = splitext(slave_cwa)[0] + ".wav"
-
-    convert_subject_raw_file(master_cwa, wav_outfile=master_wav)
-    convert_subject_raw_file(slave_cwa, wav_outfile=slave_wav)
-
-    # Synchronize them and make them a CSV
-    subprocess.call([timesync, master_wav, slave_wav, "-csv", output_csv])
-
-    if clean_up:
-        print("Deleting wav files")
-        subprocess.call(["rm", master_wav])
-        subprocess.call(["rm", slave_wav])
+SUBJECT_DATA_LOCATION = 'private_data/annotated_data/'
 
 
 def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
@@ -83,12 +45,6 @@ def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, 
             clap_count = 1
 
     return claps
-
-
-def set_header_names_for_data_generated_by_omconvert_script(data_frame):
-    data_frame.rename(
-        columns={0: 'Time', 1: 'Master-X', 2: 'Master-Y', 3: 'Master-Z', 4: 'Slave-X', 5: 'Slave-Y', 6: 'Slave-Z'},
-        inplace=True)
 
 
 def find_claps_from_sensor_data(channel_data, sampling_frequency, mph=5, valley=True,
@@ -403,4 +359,4 @@ def extract_wrist(subject_id):
 
 
 if __name__ == "__main__":
-    extract_wrist("006")
+    extract_back_and_thigh("002")
