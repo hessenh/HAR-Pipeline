@@ -16,11 +16,11 @@ from tools.pandas_helpers import write_selected_columns_to_file
 SUBJECT_DATA_LOCATION = 'private_data/annotated_data/'
 
 
-def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
-    claps = []
+def find_repeated_peaks(peak_array, required_peaks=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
+    starts_and_stops = []
     start_peak = peak_array[0]
     previous_peak = start_peak
-    clap_count = 1
+    peak_count = 1
     max_data_points_between_peaks = max_interval * sampling_frequency
     min_data_points_between_peaks = min_interval * sampling_frequency
 
@@ -28,30 +28,30 @@ def find_claps_from_peaks(peak_array, required_claps=3, sampling_frequency=100, 
         time_interval = peak - previous_peak
 
         if min_data_points_between_peaks < time_interval <= max_data_points_between_peaks:
-            clap_count += 1
+            peak_count += 1
         elif time_interval > max_data_points_between_peaks:
             start_peak = peak
-            clap_count = 1  # Added resetting peak count when time interval too large from last peak. -- Eirik
+            peak_count = 1  # Added resetting peak count when time interval too large from last peak. -- Eirik
         else:
             # Interval is less than minimum interval; still part of an already registered peak.
             continue  # Skip to next loop iteration
 
         previous_peak = peak
 
-        if clap_count == required_claps:
-            start_and_end_of_claps = (start_peak, peak)
-            claps.append(start_and_end_of_claps)
+        if peak_count == required_peaks:
+            start_and_end_of_sequence = (start_peak, peak)
+            starts_and_stops.append(start_and_end_of_sequence)
             start_peak = peak  # Reset
-            clap_count = 1
+            peak_count = 1
 
-    return claps
+    return starts_and_stops
 
 
 def find_claps_from_sensor_data(channel_data, sampling_frequency, mph=5, valley=True,
                                 required_claps=3):
     peaks = detect_peaks(channel_data, mph=mph, valley=valley)
 
-    clap_times = find_claps_from_peaks(peaks, required_claps=required_claps, sampling_frequency=sampling_frequency)
+    clap_times = find_repeated_peaks(peaks, required_peaks=required_claps, sampling_frequency=sampling_frequency)
 
     return clap_times
 
