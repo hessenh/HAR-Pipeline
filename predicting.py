@@ -10,7 +10,7 @@ import json
 V = TRAINING_VARIABLES.VARS()
 
 
-def main():
+def predict():
     # Load test data
     # Input: Testing, generate new windows, oversampling, viterbi training
     data_type = "predicting"
@@ -185,4 +185,4 @@ def show_confusion_matrix(result_matrix, index):
 
 
 if __name__ == "__main__":
-    main()
+    predict()
