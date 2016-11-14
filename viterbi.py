@@ -8,14 +8,10 @@ import pandas as pd
 V = TRAINING_VARIABLES.VARS()
 
 
-def main():
-    print run_viterbi()
-
-
-def run_viterbi():
+def run_viterbi(raw_cnn_prediction_path):
     start_probability = generate_start_probability()
     transition_dictionary = load_obj(V.VITERBI_TRANSITION_DICTIONARY_PATH)
-    emission_probability = generate_emission_probability(V.VITERBI_PREDICTION_PATH_TESTING, start_probability)
+    emission_probability = generate_emission_probability(raw_cnn_prediction_path, start_probability)
 
     VITERBI_PATH = [{}]
     path = {}
@@ -56,7 +52,7 @@ def generate_emission_probability(observation_path, start_probability):
     emission_probability = np.copy(observations)
     # For each observation
     for j in range(0, len(observations)):  # self.observations_length
-        # Do it for evert state
+        # Do it for every state
         for i in range(0, len(states)):
             emission_probability[j][i] = observations[j][i] / np.exp(start_probability[states[i]])
         s = np.sum(emission_probability[j])
@@ -224,7 +220,3 @@ def backward(predictions_log, transition_log, number_activities):
             backward_prob[t][act] = prob_t
 
     return backward_prob
-
-
-if __name__ == "__main__":
-    main()

@@ -26,11 +26,14 @@ def main():
 
     cnn_result = cnn.get_predictions()
 
-    viterbi_result = run_viterbi()
+    raw_predictions_path = V.VITERBI_PREDICTION_PATH_PREDICTING
+    np.savetxt(raw_predictions_path, cnn_result, delimiter=",")
+
+    viterbi_result = run_viterbi(raw_predictions_path)
 
     data_frame = pd.DataFrame(viterbi_result)
 
-    data_frame.to_csv(V.VITERBI_RESULT_PREDICTING)  # TODO: Results are the same every run. Source of error unknown.
+    data_frame.to_csv(V.VITERBI_RESULT_PREDICTING)
 
     print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
 
