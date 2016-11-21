@@ -4,12 +4,12 @@ from viterbi import generate_transition_matrix
 import numpy as np
 import TRAINING_VARIABLES
 
+
 V = TRAINING_VARIABLES.VARS()
 
 
 def main():
     # Load training data
-    # Input: Data_type, generate new windows, oversampling, viterbi training
     data_type = "training"
     generate_new_windows = True
     oversampling = True

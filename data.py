@@ -1,22 +1,26 @@
+
 import pandas as pd
+import numpy as np
+from numpy.lib.stride_tricks import as_strided as ast
 from os import listdir, makedirs
 from os.path import isfile, join, exists
-import numpy as np
 from collections import Counter
-from numpy.lib.stride_tricks import as_strided as ast
-
 import TRAINING_VARIABLES
+
 
 V = TRAINING_VARIABLES.VARS()
 
 
 class DataSet(object):
+
     def __init__(self, data, labels):
         self.data = data
         self.labels = labels
+
         self._epochs_completed = 0
         self._index_in_epoch = 0
         self._num_examples = len(data)
+
 
     def shuffle_data_set(self):
         perm = np.arange(len(self.data))
@@ -24,23 +28,28 @@ class DataSet(object):
         self.data = self.data[perm]
         self.labels = self.labels[perm]
 
+
     def next_batch(self, batch_size):
         """Return the next `batch_size` examples from this data set."""
         start = self._index_in_epoch
         self._index_in_epoch += batch_size
+
         if self._index_in_epoch > self._num_examples:
-            # Finished epoch
             self._epochs_completed += 1
-            # Shuffle the data
+
+            # Shuffle
             perm = np.arange(self._num_examples)
             np.random.shuffle(perm)
             self.data = self.data[perm]
             self.labels = self.labels[perm]
+
             # Start next epoch
             start = 0
             self._index_in_epoch = batch_size
             assert batch_size <= self._num_examples
+
         end = self._index_in_epoch
+
         return self.data[start:end], self.labels[start:end]
 
 
@@ -64,25 +73,25 @@ def load_windows(data_type, oversampling, subjects_path):
 
     subject_list = get_folder_names(subjects_path)
 
-    # If subject list is empty - alert
     if len(subject_list) == 0:
         print "No subjects found!"
 
     first_iteration = True
-    # Iterate over all subjects
+
     for subject_id in subject_list:
         print subject_id
         subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
-
         df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv')
+
         if data_type != "predicting":
-            df_label_temp = pd.read_csv(subject_window_path + 'LABEL.csv', header=None, sep=',')
+            df_label_temp = load_dataframe(subject_window_path + 'LABEL.csv')
 
         if first_iteration:
             df_sensor = df_sensor_temp.as_matrix()
             if data_type != "predicting":
                 df_label = df_label_temp.as_matrix()
             first_iteration = False
+
         else:
             df_sensor = np.concatenate((df_sensor, df_sensor_temp), axis=0)
             if data_type != "predicting":
