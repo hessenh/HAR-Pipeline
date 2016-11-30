@@ -7,7 +7,7 @@ import TRAINING_VARIABLES
 V = TRAINING_VARIABLES.VARS()
 
 
-def main():
+def train():
     # Load training data
     # Input: Data_type, generate new windows, oversampling, viterbi training
     data_type = "training"
@@ -45,4 +45,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    train()

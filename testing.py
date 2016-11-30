@@ -10,7 +10,7 @@ import json
 V = TRAINING_VARIABLES.VARS()
 
 
-def main():
+def test(statistics_save_path=V.RESULT_TESTING_JSON):
     # Load test data
     # Input: Testing, generate new windows, oversampling, viterbi training
     data_type = "testing"
@@ -51,7 +51,7 @@ def main():
     np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
     result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,', engine='python').as_matrix()
 
-    produce_statistics_json(result, V.RESULT_TESTING_JSON)
+    produce_statistics_json(result, statistics_save_path)
 
     # visualize(result)
 
@@ -203,4 +203,4 @@ def show_confusion_matrix(result_matrix, index):
 
 
 if __name__ == "__main__":
-    main()
+    test()
