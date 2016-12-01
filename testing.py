@@ -52,6 +52,7 @@ def test(statistics_save_path=V.RESULT_TESTING_JSON):
     result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,', engine='python').as_matrix()
 
     produce_statistics_json(result, statistics_save_path)
+    cnn.close_session()
 
     # visualize(result)
 
@@ -111,10 +112,12 @@ def get_score(result_matrix):
             if actual[i] != activity and predicted[i] != activity:
                 true_negatives[activity] += 1.0
 
-    accuracy = sum(true_positives) / sum(tp_fn)
-    specificity = true_negatives / fp_tn
-    precision = true_positives / fp_tp
-    recall = true_positives / tp_fn
+    with np.errstate(divide="warn"):  # To avoid crashing when 0/0
+        accuracy = sum(true_positives) / sum(tp_fn)
+        specificity = true_negatives / fp_tn
+        precision = true_positives / fp_tp
+        recall = true_positives / tp_fn
+
     return [accuracy, specificity, precision, recall]
 
 
