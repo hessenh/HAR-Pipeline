@@ -59,39 +59,39 @@ def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subject
 
 
 def load_windows(data_type, oversampling, subjects_path):
-    df_sensor = None
-    df_label = None
+    all_sensor_dataframes = None
+    all_label_dataframes = None
+
+    individual_sensor_dataframes = []
+    individual_label_dataframes = []
 
     subject_list = get_folder_names(subjects_path)
 
-    # If subject list is empty - alert
     if len(subject_list) == 0:
         print "No subjects found!"
 
-    first_iteration = True
-    # Iterate over all subjects
     for subject_id in subject_list:
         print subject_id
         subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
 
-        df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv')
-        if data_type != "predicting":
-            df_label_temp = pd.read_csv(subject_window_path + 'LABEL.csv', header=None, sep=',')
+        df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv').as_matrix()
+        individual_sensor_dataframes.append(df_sensor_temp)
 
-        if first_iteration:
-            df_sensor = df_sensor_temp.as_matrix()
-            if data_type != "predicting":
-                df_label = df_label_temp.as_matrix()
-            first_iteration = False
-        else:
-            df_sensor = np.concatenate((df_sensor, df_sensor_temp), axis=0)
-            if data_type != "predicting":
-                df_label = np.concatenate((df_label, df_label_temp), axis=0)
+        if data_type != "predicting":
+            df_label_temp = pd.read_csv(subject_window_path + 'LABEL.csv', header=None, sep=',').as_matrix()
+            individual_label_dataframes.append(df_label_temp)
+
+    # Concatenate all individual dataframes
+    if individual_sensor_dataframes:
+        all_sensor_dataframes = np.vstack(individual_sensor_dataframes)
+
+    if individual_label_dataframes:
+        all_label_dataframes = np.vstack(individual_label_dataframes)
 
     if data_type == "training" and oversampling:
         print 'OVERSAMPLING'
-        data_sensor = df_sensor
-        data_label = df_label
+        data_sensor = all_sensor_dataframes
+        data_label = all_label_dataframes
 
         # length of longest activity
         max_length = 0
@@ -119,16 +119,16 @@ def load_windows(data_type, oversampling, subjects_path):
             data_sensor_new[i * max_length:i * max_length + max_length] = new_activity_data
             data_label_new[i * max_length:i * max_length + max_length] = new_activity_label
 
-        df_sensor = data_sensor_new
-        df_label = data_label_new
+        all_sensor_dataframes = data_sensor_new
+        all_label_dataframes = data_label_new
 
-    return df_sensor, df_label
+    return all_sensor_dataframes, all_label_dataframes
 
 
 def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path):
-    subject_list = get_folder_names(subjects_path)
+    all_subjects_in_folder = get_folder_names(subjects_path)
 
-    for subject_name in subject_list:
+    for subject_name in all_subjects_in_folder:
         print subject_name
         subject_path = subjects_path + '/' + subject_name
 
