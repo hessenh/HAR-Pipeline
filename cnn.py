@@ -134,23 +134,22 @@ class ConvolutionalNeuralNetwork(object):
             self._batch_size = batch_size
             self._model_name = model_name
 
-            with tf.device("/gpu:1"):
-                '''Tensorflow placeholders'''
-                self._x = tf.placeholder("float", shape=[None, self._input_size])
-                self._y = tf.placeholder("float", shape=[None, self._output_size])
+            '''Tensorflow placeholders'''
+            self._x = tf.placeholder("float", shape=[None, self._input_size])
+            self._y = tf.placeholder("float", shape=[None, self._output_size])
 
-                '''Convolutinal layers'''
-                self._output_conv = connect_conv_layers(tf.reshape(self._x, [-1, resize_y, resize_x, 1]))
+            '''Convolutinal layers'''
+            self._output_conv = connect_conv_layers(tf.reshape(self._x, [-1, resize_y, resize_x, 1]))
 
-                '''Densly conected layers'''
-                self._keep_prob = tf.placeholder("float")
-                self._y_conv = connect_nn_layers(self._output_conv, self._keep_prob)
+            '''Densly conected layers'''
+            self._keep_prob = tf.placeholder("float")
+            self._y_conv = connect_nn_layers(self._output_conv, self._keep_prob)
 
-                '''Tensorflow variables'''
-                self._cross_entropy = -tf.reduce_sum(self._y * tf.log(tf.clip_by_value(self._y_conv, 1e-10, 1.0)))
-                self._train_step = tf.train.AdamOptimizer(1e-4).minimize(self._cross_entropy)
-                self._correct_prediction = tf.equal(tf.argmax(self._y_conv, 1), tf.argmax(self._y, 1))
-                self._accuracy = tf.reduce_mean(tf.cast(self._correct_prediction, "float"))
+            '''Tensorflow variables'''
+            self._cross_entropy = -tf.reduce_sum(self._y * tf.log(tf.clip_by_value(self._y_conv, 1e-10, 1.0)))
+            self._train_step = tf.train.AdamOptimizer(1e-4).minimize(self._cross_entropy)
+            self._correct_prediction = tf.equal(tf.argmax(self._y_conv, 1), tf.argmax(self._y, 1))
+            self._accuracy = tf.reduce_mean(tf.cast(self._correct_prediction, "float"))
 
             '''Data containers'''
             self._data_set = DataSet([], [])

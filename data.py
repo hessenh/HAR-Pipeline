@@ -4,6 +4,7 @@ from os.path import isfile, join, exists
 import numpy as np
 from collections import Counter
 from numpy.lib.stride_tricks import as_strided as ast
+import sklearn.preprocessing
 
 import TRAINING_VARIABLES
 
@@ -44,33 +45,32 @@ class DataSet(object):
         return self.data[start:end], self.labels[start:end]
 
 
-def main():
-    get_data_set("testing", False, False, False)
-
-
-def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path, subject_list=None):
     if generate_new_windows:
-        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path)
+        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list)
 
-    df_sensor, df_label = load_windows(data_type, oversampling, subjects_path)
+    df_sensor, df_label = load_windows(data_type, oversampling, subjects_path, subject_list)
     data_set = DataSet(df_sensor, df_label)
 
     return data_set
 
 
-def load_windows(data_type, oversampling, subjects_path):
+def load_windows(data_type, oversampling, subjects_path, subject_list=None):
     all_sensor_dataframes = None
     all_label_dataframes = None
 
     individual_sensor_dataframes = []
     individual_label_dataframes = []
 
-    subject_list = get_folder_names(subjects_path)
+    all_subjects_in_folder = get_folder_names(subjects_path)
 
-    if len(subject_list) == 0:
+    if len(all_subjects_in_folder) == 0:
         print "No subjects found!"
 
-    for subject_id in subject_list:
+    for subject_id in all_subjects_in_folder:
+        if subject_list:
+            if subject_id not in subject_list:
+                continue
         print subject_id
         subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
 
@@ -125,10 +125,13 @@ def load_windows(data_type, oversampling, subjects_path):
     return all_sensor_dataframes, all_label_dataframes
 
 
-def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path):
+def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list=None):
     all_subjects_in_folder = get_folder_names(subjects_path)
 
     for subject_name in all_subjects_in_folder:
+        if subject_list:
+            if subject_name not in subject_list:
+                continue
         print subject_name
         subject_path = subjects_path + '/' + subject_name
 
@@ -347,7 +350,3 @@ def sliding_window(a, ws, ss=None, flatten=True):
     # remove any dimensions with size 1
     dim = filter(lambda i: i != 1, dim)
     return stridden.reshape(dim)
-
-
-if __name__ == "__main__":
-    main()

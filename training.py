@@ -7,7 +7,7 @@ import TRAINING_VARIABLES
 V = TRAINING_VARIABLES.VARS()
 
 
-def train():
+def train(subject_list=None):
     # Load training data
     # Input: Data_type, generate new windows, oversampling, viterbi training
     data_type = "training"
@@ -15,7 +15,7 @@ def train():
     oversampling = True
     viterbi = False
     print("Getting dataset for training")
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH, subject_list=subject_list)
     data_set.shuffle_data_set()
 
     # Create network
@@ -34,7 +34,7 @@ def train():
     oversampling = False
     viterbi = True
     print("Getting dataset for viterbi classification")
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TRAINING_PATH, subject_list)
     cnn.load_model()
     # Data set and number of samples
     print("Getting predictions for viterbi")
