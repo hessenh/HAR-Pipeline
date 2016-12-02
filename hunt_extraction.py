@@ -115,7 +115,9 @@ def convert_string_labels_to_numbers(label_list):
         "heel drop": 15,
         "vigorous activity": 16,
         "non-vigorous activity": 17,
-        "Car": 18  # TODO: Check with HAR group to see if this labeling of Car is all right.
+        "Car": 18,
+        "Transport(sitting)": 18,
+        "Commute(standing)": 19
     }
 
     return [label_to_number_dict[label] for label in label_list]
@@ -177,6 +179,7 @@ def extract_back_and_thigh(subject_id='008'):
             ending_heel_drops = config_dict["ending_heel_drops"]
             master_sensor_codewords = config_dict["master_sensor_codewords"]
             original_sampling_frequency = config_dict["sampling_frequency"]
+        print("Found config file")
     except IOError:
         print("Could not find config file. Returning to default configurations")
 
@@ -359,4 +362,4 @@ def extract_wrist(subject_id):
 
 
 if __name__ == "__main__":
-    extract_back_and_thigh("002")
+    extract_back_and_thigh("008")
