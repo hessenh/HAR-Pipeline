@@ -13,7 +13,7 @@ from raw_data_conversion.conversion import convert_subject_raw_file, create_sync
     set_header_names_for_data_generated_by_omconvert_script
 from tools.pandas_helpers import write_selected_columns_to_file
 
-SUBJECT_DATA_LOCATION = 'private_data/annotated_data/'
+SUBJECT_DATA_LOCATION = './private_data/annotated_data/'
 
 
 def find_repeated_peaks(peak_array, required_peaks=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
@@ -158,7 +158,7 @@ def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, 
 
 
 def extract_back_and_thigh(subject_id='008'):
-    master_sensor_codewords, slave_sensor_codeword = ["BACK"], "THIGH"
+    master_sensor_codeword, slave_sensor_codewords = "THIGH", ["BACK"]
     starting_heel_drops, ending_heel_drops = 3, 3
     heel_drop_amplitude = 5
 
@@ -177,7 +177,7 @@ def extract_back_and_thigh(subject_id='008'):
             heel_drop_amplitude = config_dict["heel_drop_amplitude"]
             starting_heel_drops = config_dict["starting_heel_drops"]
             ending_heel_drops = config_dict["ending_heel_drops"]
-            master_sensor_codewords = config_dict["master_sensor_codewords"]
+            slave_sensor_codewords = config_dict["slave_sensor_codewords"]
             original_sampling_frequency = config_dict["sampling_frequency"]
         print("Found config file")
     except IOError:
@@ -187,28 +187,28 @@ def extract_back_and_thigh(subject_id='008'):
 
     synchronized_files = []
 
-    for master_sensor_codeword in master_sensor_codewords:
+    for slave_sensor_codeword in slave_sensor_codewords:
         print("\nReading sensor data ...")
 
-        sync_filename = subject_id + "_" + master_sensor_codeword + "_" + slave_sensor_codeword + "_synchronized.csv"
-        sync_path = subject_folder + '/' + sync_filename
+        synchronized_csv = subject_id + "_" + master_sensor_codeword + '_' + slave_sensor_codeword + "_synchronized.csv"
+        synchronized_complete_path = subject_folder + '/' + synchronized_csv
 
-        if not os.path.isfile(sync_path):
-            print("Synchronized sensor data file", sync_path, "not found. Creating synchronized data.")
+        if not os.path.isfile(synchronized_complete_path):
+            print("Synchronized sensor data file", synchronized_complete_path, "not found. Creating synchronized data.")
             master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
             slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-            create_synchronized_file_for_subject(master_cwa, slave_cwa, sync_path)
+            create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_complete_path)
             print("Conversion finished.")
 
-        synchronized_files.append(sync_path)
+        synchronized_files.append(synchronized_complete_path)
 
-    for sync_path, master_sensor_codeword in zip(synchronized_files, master_sensor_codewords):
-        print("Reading", sync_path)
+    for synchronized_complete_path, slave_sensor_codeword in zip(synchronized_files, slave_sensor_codewords):
+        print("Reading", synchronized_complete_path)
         a = time()
-        sensor_readings = pd.read_csv(sync_path, parse_dates=[0], header=None)
+        sensor_readings = pd.read_csv(synchronized_complete_path, parse_dates=[0], header=None)
         b = time()
 
-        heel_drop_column = 'Slave-X'
+        heel_drop_column = 'Master-X'
 
         if original_sampling_frequency == 200:
             sensor_readings = sensor_readings[::2].reindex()
@@ -227,10 +227,10 @@ def extract_back_and_thigh(subject_id='008'):
         print("Writing results to CSVs")
         a = time()
 
-        csv_output_folder = subject_folder + "/" + master_sensor_codeword
+        csv_output_folder = subject_folder + "/" + slave_sensor_codeword
 
-        master_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + master_sensor_codeword + "_Back.csv"
-        slave_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + slave_sensor_codeword + "_Right.csv"
+        master_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + master_sensor_codeword + "_Right.csv"
+        slave_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + slave_sensor_codeword + "_Back.csv"
         label_csv = csv_output_folder + "/" + subject_id + "_GoPro_LAB_All.csv"
 
         master_columns = ["Master-X", "Master-Y", "Master-Z"]
@@ -362,4 +362,4 @@ def extract_wrist(subject_id):
 
 
 if __name__ == "__main__":
-    extract_back_and_thigh("008")
+    extract_back_and_thigh("005")
