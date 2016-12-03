@@ -45,9 +45,9 @@ class DataSet(object):
         return self.data[start:end], self.labels[start:end]
 
 
-def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path, subject_list=None):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path, subject_list=None, normalize_sensor_data=False):
     if generate_new_windows:
-        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list)
+        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list, normalize_data=normalize_sensor_data)
 
     df_sensor, df_label = load_windows(data_type, oversampling, subjects_path, subject_list)
     data_set = DataSet(df_sensor, df_label)
@@ -125,7 +125,7 @@ def load_windows(data_type, oversampling, subjects_path, subject_list=None):
     return all_sensor_dataframes, all_label_dataframes
 
 
-def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list=None):
+def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list=None, normalize_data=False):
     all_subjects_in_folder = get_folder_names(subjects_path)
 
     for subject_name in all_subjects_in_folder:
@@ -135,10 +135,10 @@ def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, s
         print subject_name
         subject_path = subjects_path + '/' + subject_name
 
-        generate_windows_for_one_subject(subject_path, data_type, viterbi)
+        generate_windows_for_one_subject(subject_path, data_type, viterbi, normalize_data=normalize_data)
 
 
-def generate_windows_for_one_subject(subject_path, data_type, viterbi):
+def generate_windows_for_one_subject(subject_path, data_type, viterbi, normalize_data=False):
     subject_files_dictionary = get_subject_files_from_path(subject_path)
 
     df_sensor_1 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_1])
@@ -155,15 +155,15 @@ def generate_windows_for_one_subject(subject_path, data_type, viterbi):
     # Create windows
     if data_type == "testing" or viterbi:
         overlap = V.TESTING_OVERLAP
-        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap, normalize_data)
         create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
     elif data_type == "training":
         overlap = V.TRAINING_OVERLAP
-        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap, normalize_data)
         create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
     elif data_type == "predicting":
         overlap = V.PREDICTING_OVERLAP
-        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap, normalize_data)
 
 
 def find_most_common_label(l):
@@ -198,8 +198,11 @@ def create_window_label(df_label, folder, length, overlap):
     save_data_frame(df_window, folder, V.WINDOW_NAME_LABEL)
 
 
-def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap):
+def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False):
     # Sensor 1
+    if normalize_data:
+        df_sensor_1 = (df_sensor_1 - df_sensor_1.mean())/df_sensor_1.std()
+        df_sensor_2 = (df_sensor_2 - df_sensor_2.mean())/df_sensor_2.std()
     df_s_1_x = split_data_frame(df_sensor_1[0], length, overlap)
     df_s_1_y = split_data_frame(df_sensor_1[1], length, overlap)
     df_s_1_z = split_data_frame(df_sensor_1[2], length, overlap)

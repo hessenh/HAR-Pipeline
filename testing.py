@@ -10,14 +10,14 @@ import json
 V = TRAINING_VARIABLES.VARS()
 
 
-def test(statistics_save_path=V.RESULT_TESTING_JSON, subject_list=None):
+def test(statistics_save_path=V.RESULT_TESTING_JSON, subject_list=None, normalize_sensor_data=False):
     # Load test data
     # Input: Testing, generate new windows, oversampling, viterbi training
     data_type = "testing"
     generate_new_windows = True
     oversampling = False
     viterbi = False
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TESTING_PATH, subject_list=None)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TESTING_PATH, subject_list=None, normalize_sensor_data=normalize_sensor_data)
 
     # Create network
     cnn = ConvolutionalNeuralNetwork()
