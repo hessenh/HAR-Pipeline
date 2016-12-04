@@ -104,7 +104,6 @@ class LongShortTermMemory:
         score = self.model.evaluate(X, y, verbose=1)
         t = time() - start
 
-        print("Loss: %.3f" % score[0])
         print("Accuracy: %.2f %%" % (score[1]*100))
 
         return score, t
