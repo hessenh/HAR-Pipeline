@@ -1,3 +1,4 @@
+
 class VARS(object):
     # Used to format a list when creating cnn model name
     def format_list(list_input):
@@ -19,7 +20,7 @@ class VARS(object):
     # Amount of overlap used for training, testing and prediction phase. None equals zero overlap.
     # 20 equals 80% overlap. 40 = 60% overlap. Yeah, not intuitive, but...
     TESTING_OVERLAP = None
-    TRAINING_OVERLAP = 20
+    TRAINING_OVERLAP = None
     PREDICTING_OVERLAP = None
     # Length of data window. With sampling frequency as 100Hz, we chose 100, meaning 1.0 second windows.
     WINDOW_LENGTH = 100
@@ -72,18 +73,20 @@ class VARS(object):
 
     '''LSTM SPECIFIC'''
     # Model config
-    LSTM_MODEL_NAME = "model0"
+    LSTM_BUILD_MODEL_NAME = "lstm_test"
+    LSTM_LOAD_MODEL_NAME = "20161204_0033_lstm_test"
+    LSTM_MODEL_PATH = "MODELS"
     LSTM_INPUT_DIM = 1
     LSTM_HIDDEN_DIM = [120]
     LSTM_OUTPUT_DIM = 10
     LSTM_DROPOUT = 0.2
-    LSTM_ACTIVATION = "linear"
-    LSTM_LOSS = "mse"
-    LSTM_LEARNING_RATE = 0.001
+    LSTM_ACTIVATION = "sigmoid"
 
     # Training config
-    LSTM_NEPOCH = 20
-    LSTM_BATCH_SIZE = 30
+    LSTM_LOSS = "categorical_crossentropy"
+    LSTM_LEARNING_RATE = 0.001
+    LSTM_NEPOCH = 6
+    LSTM_BATCH_SIZE = 120
     LSTM_VALIDATION_SPLIT = 0.2
 
     ''' VITERBI '''
