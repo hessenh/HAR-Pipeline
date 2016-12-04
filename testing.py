@@ -17,7 +17,7 @@ def test(statistics_save_path=V.RESULT_TESTING_JSON, subject_list=None, normaliz
     generate_new_windows = True
     oversampling = False
     viterbi = False
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TESTING_PATH, subject_list=None, normalize_sensor_data=normalize_sensor_data)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TESTING_PATH, subject_list=subject_list, normalize_sensor_data=normalize_sensor_data)
 
     # Create network
     cnn = ConvolutionalNeuralNetwork()
