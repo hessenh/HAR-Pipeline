@@ -4,6 +4,7 @@ from os.path import isfile, join, exists
 import numpy as np
 from collections import Counter
 from numpy.lib.stride_tricks import as_strided as ast
+import sklearn.preprocessing
 
 import TRAINING_VARIABLES
 
@@ -44,54 +45,53 @@ class DataSet(object):
         return self.data[start:end], self.labels[start:end]
 
 
-def main():
-    get_data_set("testing", False, False, False)
-
-
-def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path, subject_list=None, normalize_sensor_data=False):
     if generate_new_windows:
-        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path)
+        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list, normalize_data=normalize_sensor_data)
 
-    df_sensor, df_label = load_windows(data_type, oversampling, subjects_path)
+    df_sensor, df_label = load_windows(data_type, oversampling, subjects_path, subject_list)
     data_set = DataSet(df_sensor, df_label)
 
     return data_set
 
 
-def load_windows(data_type, oversampling, subjects_path):
-    df_sensor = None
-    df_label = None
+def load_windows(data_type, oversampling, subjects_path, subject_list=None):
+    all_sensor_dataframes = None
+    all_label_dataframes = None
 
-    subject_list = get_folder_names(subjects_path)
+    individual_sensor_dataframes = []
+    individual_label_dataframes = []
 
-    # If subject list is empty - alert
-    if len(subject_list) == 0:
+    all_subjects_in_folder = get_folder_names(subjects_path)
+
+    if len(all_subjects_in_folder) == 0:
         print "No subjects found!"
 
-    first_iteration = True
-    # Iterate over all subjects
-    for subject_id in subject_list:
+    for subject_id in all_subjects_in_folder:
+        if subject_list:
+            if subject_id not in subject_list:
+                continue
         print subject_id
         subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
 
-        df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv')
-        if data_type != "predicting":
-            df_label_temp = pd.read_csv(subject_window_path + 'LABEL.csv', header=None, sep=',')
+        df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv').as_matrix()
+        individual_sensor_dataframes.append(df_sensor_temp)
 
-        if first_iteration:
-            df_sensor = df_sensor_temp.as_matrix()
-            if data_type != "predicting":
-                df_label = df_label_temp.as_matrix()
-            first_iteration = False
-        else:
-            df_sensor = np.concatenate((df_sensor, df_sensor_temp), axis=0)
-            if data_type != "predicting":
-                df_label = np.concatenate((df_label, df_label_temp), axis=0)
+        if data_type != "predicting":
+            df_label_temp = pd.read_csv(subject_window_path + 'LABEL.csv', header=None, sep=',').as_matrix()
+            individual_label_dataframes.append(df_label_temp)
+
+    # Concatenate all individual dataframes
+    if individual_sensor_dataframes:
+        all_sensor_dataframes = np.vstack(individual_sensor_dataframes)
+
+    if individual_label_dataframes:
+        all_label_dataframes = np.vstack(individual_label_dataframes)
 
     if data_type == "training" and oversampling:
         print 'OVERSAMPLING'
-        data_sensor = df_sensor
-        data_label = df_label
+        data_sensor = all_sensor_dataframes
+        data_label = all_label_dataframes
 
         # length of longest activity
         max_length = 0
@@ -119,23 +119,26 @@ def load_windows(data_type, oversampling, subjects_path):
             data_sensor_new[i * max_length:i * max_length + max_length] = new_activity_data
             data_label_new[i * max_length:i * max_length + max_length] = new_activity_label
 
-        df_sensor = data_sensor_new
-        df_label = data_label_new
+        all_sensor_dataframes = data_sensor_new
+        all_label_dataframes = data_label_new
 
-    return df_sensor, df_label
+    return all_sensor_dataframes, all_label_dataframes
 
 
-def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path):
-    subject_list = get_folder_names(subjects_path)
+def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list=None, normalize_data=False):
+    all_subjects_in_folder = get_folder_names(subjects_path)
 
-    for subject_name in subject_list:
+    for subject_name in all_subjects_in_folder:
+        if subject_list:
+            if subject_name not in subject_list:
+                continue
         print subject_name
         subject_path = subjects_path + '/' + subject_name
 
-        generate_windows_for_one_subject(subject_path, data_type, viterbi)
+        generate_windows_for_one_subject(subject_path, data_type, viterbi, normalize_data=normalize_data)
 
 
-def generate_windows_for_one_subject(subject_path, data_type, viterbi):
+def generate_windows_for_one_subject(subject_path, data_type, viterbi, normalize_data=False):
     subject_files_dictionary = get_subject_files_from_path(subject_path)
 
     df_sensor_1 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_1])
@@ -152,15 +155,15 @@ def generate_windows_for_one_subject(subject_path, data_type, viterbi):
     # Create windows
     if data_type == "testing" or viterbi:
         overlap = V.TESTING_OVERLAP
-        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap, normalize_data)
         create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
     elif data_type == "training":
         overlap = V.TRAINING_OVERLAP
-        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap, normalize_data)
         create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
     elif data_type == "predicting":
         overlap = V.PREDICTING_OVERLAP
-        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap, normalize_data)
 
 
 def find_most_common_label(l):
@@ -195,8 +198,11 @@ def create_window_label(df_label, folder, length, overlap):
     save_data_frame(df_window, folder, V.WINDOW_NAME_LABEL)
 
 
-def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap):
+def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False):
     # Sensor 1
+    if normalize_data:
+        df_sensor_1 = (df_sensor_1 - df_sensor_1.mean())/df_sensor_1.std()
+        df_sensor_2 = (df_sensor_2 - df_sensor_2.mean())/df_sensor_2.std()
     df_s_1_x = split_data_frame(df_sensor_1[0], length, overlap)
     df_s_1_y = split_data_frame(df_sensor_1[1], length, overlap)
     df_s_1_z = split_data_frame(df_sensor_1[2], length, overlap)
@@ -347,7 +353,3 @@ def sliding_window(a, ws, ss=None, flatten=True):
     # remove any dimensions with size 1
     dim = filter(lambda i: i != 1, dim)
     return stridden.reshape(dim)
-
-
-if __name__ == "__main__":
-    main()

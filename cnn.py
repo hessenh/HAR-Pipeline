@@ -1,6 +1,7 @@
 import tensorflow as tf
 import TRAINING_VARIABLES
 from data import DataSet
+import numpy as np
 
 '''
 MODULE FUNCTIONS
@@ -117,40 +118,46 @@ class ConvolutionalNeuralNetwork(object):
             config.gpu_options.allow_growth = True
 
             session = tf.Session(config=config)
-            session.run(tf.initialize_all_variables())
+            session.run(tf.global_variables_initializer())
             return session
 
         '''
         CNN INSTANCE VARIABLES
         '''
+        self._graph = tf.Graph()
+        with self._graph.as_default():
 
-        '''Model configurations'''
-        self._input_size = input_size
-        self._output_size = output_size
-        self._iteration_size = number_of_iterations
-        self._batch_size = batch_size
-        self._model_name = model_name
+            '''Model configurations'''
+            self._input_size = input_size
+            self._output_size = output_size
+            self._iteration_size = number_of_iterations
+            self._batch_size = batch_size
+            self._model_name = model_name
 
-        '''Tensorflow placeholders'''
-        self._x = tf.placeholder("float", shape=[None, self._input_size])
-        self._y = tf.placeholder("float", shape=[None, self._output_size])
+            '''Tensorflow placeholders'''
+            self._x = tf.placeholder("float", shape=[None, self._input_size])
+            self._y = tf.placeholder("float", shape=[None, self._output_size])
 
-        '''Convolutinal layers'''
-        self._output_conv = connect_conv_layers(tf.reshape(self._x, [-1, resize_y, resize_x, 1]))
+            '''Convolutinal layers'''
+            self._output_conv = connect_conv_layers(tf.reshape(self._x, [-1, resize_y, resize_x, 1]))
 
-        '''Densly conected layers'''
-        self._keep_prob = tf.placeholder("float")
-        self._y_conv = connect_nn_layers(self._output_conv, self._keep_prob)
+            '''Densly conected layers'''
+            self._keep_prob = tf.placeholder("float")
+            self._y_conv = connect_nn_layers(self._output_conv, self._keep_prob)
 
-        '''Tensorflow variables'''
-        self._cross_entropy = -tf.reduce_sum(self._y * tf.log(tf.clip_by_value(self._y_conv, 1e-10, 1.0)))
-        self._train_step = tf.train.AdamOptimizer(1e-4).minimize(self._cross_entropy)
-        self._correct_prediction = tf.equal(tf.argmax(self._y_conv, 1), tf.argmax(self._y, 1))
-        self._accuracy = tf.reduce_mean(tf.cast(self._correct_prediction, "float"))
+            '''Tensorflow variables'''
+            self._cross_entropy = -tf.reduce_sum(self._y * tf.log(tf.clip_by_value(self._y_conv, 1e-10, 1.0)))
+            self._train_step = tf.train.AdamOptimizer(1e-4).minimize(self._cross_entropy)
+            self._correct_prediction = tf.equal(tf.argmax(self._y_conv, 1), tf.argmax(self._y, 1))
+            self._accuracy = tf.reduce_mean(tf.cast(self._correct_prediction, "float"))
 
-        '''Data containers'''
-        self._data_set = DataSet([], [])
-        self._session = make_session()
+            '''Data containers'''
+            self._data_set = DataSet([], [])
+
+            all_vars = tf.global_variables()
+            model_vars = [k for k in all_vars if k.name.startswith(model_name)]
+            self._saver = tf.train.Saver(model_vars)
+            self._session = make_session()
 
     '''
     CNN CLASS METHODS
@@ -160,17 +167,12 @@ class ConvolutionalNeuralNetwork(object):
         self._data_set = data_set
 
     def load_model(self, load_path=V.CNN_MODEL_PATH):
-        model_name = load_path.split('/')[-1]
-
-        all_vars = tf.all_variables()
-        model_vars = [k for k in all_vars if k.name.startswith(model_name)]
-
-        tf.train.Saver(model_vars).restore(self._session, load_path + '.ckpt')
+        with self._graph.as_default():
+            self._saver.restore(self._session, load_path + '.ckpt')
         print("Model loaded from %s" % load_path)
 
     def save_model(self, path=V.CNN_MODEL_PATH):
-        saver = tf.train.Saver()
-        save_path = saver.save(self._session, path + '.ckpt')
+        save_path = self._saver.save(self._session, path + '.ckpt')
         print("Model saved in file: %s" % save_path)
 
     def train_network(self):
@@ -212,8 +214,16 @@ class ConvolutionalNeuralNetwork(object):
 
     def get_predictions(self):
         data_batch = self._data_set.data
-        predictions = self._session.run(self._y_conv, feed_dict={self._x: data_batch,
-                                                                 self._keep_prob: 1.0})
+        minibatch_size = 1000
+        all_minibatch_results = []
+        for minibatch_start in range(0, len(data_batch), minibatch_size):
+            minibatch_stop = min(len(data_batch), minibatch_start + minibatch_size)
+            minibatch_data = data_batch[minibatch_start: minibatch_stop]
+            minibatch_result = self._session.run(self._y_conv,
+                                                 feed_dict={self._x: minibatch_data, self._keep_prob: 1.0})
+            all_minibatch_results.append(minibatch_result)
+
+        predictions = np.vstack(all_minibatch_results)
         return predictions
 
     def get_viterbi_data(self, data_set, number_of_samples):
@@ -234,3 +244,6 @@ class ConvolutionalNeuralNetwork(object):
         # self.sess.run(self.y_conv, feed_dict={self.x: data_batch,self.keep_prob:1.0})
 
         return actual, predictions
+
+    def close_session(self):
+        self._session.close()

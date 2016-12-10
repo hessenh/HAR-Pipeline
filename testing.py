@@ -10,14 +10,19 @@ import json
 V = TRAINING_VARIABLES.VARS()
 
 
-def main():
+def test(statistics_save_path=None, subject_list=None, normalize_sensor_data=False, subjects_folder=None):
+    if subjects_folder is None:
+        subjects_folder = V.TESTING_PATH
+    if statistics_save_path is None:
+        statistics_save_path = V.RESULT_TESTING_JSON
     # Load test data
     # Input: Testing, generate new windows, oversampling, viterbi training
     data_type = "testing"
     generate_new_windows = True
     oversampling = False
     viterbi = False
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.TESTING_PATH)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_folder,
+                            subject_list=subject_list, normalize_sensor_data=normalize_sensor_data)
 
     # Create network
     cnn = ConvolutionalNeuralNetwork()
@@ -51,7 +56,8 @@ def main():
     np.savetxt(V.PREDICTION_RESULT_TESTING, result, delimiter=",")
     result = pd.read_csv(V.PREDICTION_RESULT_TESTING, header=None, sep='\,', engine='python').as_matrix()
 
-    produce_statistics_json(result, V.RESULT_TESTING_JSON)
+    produce_statistics_json(result, statistics_save_path)
+    cnn.close_session()
 
     # visualize(result)
 
@@ -111,10 +117,12 @@ def get_score(result_matrix):
             if actual[i] != activity and predicted[i] != activity:
                 true_negatives[activity] += 1.0
 
-    accuracy = sum(true_positives) / sum(tp_fn)
-    specificity = true_negatives / fp_tn
-    precision = true_positives / fp_tp
-    recall = true_positives / tp_fn
+    with np.errstate(divide="warn"):  # To avoid crashing when 0/0
+        accuracy = sum(true_positives) / sum(tp_fn)
+        specificity = true_negatives / fp_tn
+        precision = true_positives / fp_tp
+        recall = true_positives / tp_fn
+
     return [accuracy, specificity, precision, recall]
 
 
@@ -203,4 +211,4 @@ def show_confusion_matrix(result_matrix, index):
 
 
 if __name__ == "__main__":
-    main()
+    test()
