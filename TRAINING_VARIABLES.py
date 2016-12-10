@@ -71,24 +71,6 @@ class VARS(object):
         CNN_NEURAL_LIST[1:-1]) + CNN_PADDING + '_' + str(CNN_NUMBER_OF_ITERATIONS)
     CNN_MODEL_PATH = 'MODELS/' + CNN_MODEL_NAME
 
-    '''LSTM SPECIFIC'''
-    # Model config
-    LSTM_BUILD_MODEL_NAME = "lstm_test"
-    LSTM_LOAD_MODEL_NAME = "20161204_0033_lstm_test"
-    LSTM_MODEL_PATH = "MODELS"
-    LSTM_INPUT_DIM = 1
-    LSTM_HIDDEN_DIM = [120]
-    LSTM_OUTPUT_DIM = 10
-    LSTM_DROPOUT = 0.2
-    LSTM_ACTIVATION = "sigmoid"
-
-    # Training config
-    LSTM_LOSS = "categorical_crossentropy"
-    LSTM_LEARNING_RATE = 0.001
-    LSTM_NEPOCH = 6
-    LSTM_BATCH_SIZE = 120
-    LSTM_VALIDATION_SPLIT = 0.2
-
     ''' VITERBI '''
     # This is the amount of data windows used to create the transition matrix used in the Viterbi.
     # Our recommended length is the number of windows for the first training subject.
