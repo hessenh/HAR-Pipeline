@@ -110,7 +110,13 @@ class ConvolutionalNeuralNetwork(object):
             return y_conv
 
         def make_session():
-            session = tf.Session()
+            # The two following lines are inserted to avoid allocating the entire GPU memory from the start
+            # NOTE: Have caused allocation problems when predicting with many files at the same time.
+            # May be removed if only one process is to be run on the same GPU.
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+
+            session = tf.Session(config=config)
             session.run(tf.initialize_all_variables())
             return session
 

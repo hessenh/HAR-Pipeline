@@ -50,7 +50,7 @@ def main():
 
 def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path):
     if generate_new_windows:
-        generate_windows(data_type, viterbi, subjects_path)
+        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path)
 
     df_sensor, df_label = load_windows(data_type, oversampling, subjects_path)
     data_set = DataSet(df_sensor, df_label)
@@ -125,39 +125,42 @@ def load_windows(data_type, oversampling, subjects_path):
     return df_sensor, df_label
 
 
-def generate_windows(data_type, viterbi, subjects_path):
+def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path):
     subject_list = get_folder_names(subjects_path)
 
     for subject_name in subject_list:
         print subject_name
         subject_path = subjects_path + '/' + subject_name
 
-        subject_files_dictionary = get_subject_files_from_path(subject_path)
+        generate_windows_for_one_subject(subject_path, data_type, viterbi)
 
-        df_sensor_1 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_1])
-        df_sensor_2 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_2])
-        if data_type != "predicting":
-            df_label = load_dataframe(subject_path + '/' + subject_files_dictionary[V.LABEL])
 
-        # Remove activities
-        if data_type == "training" and not viterbi:
-            df_sensor_1, df_sensor_2, df_label = remove_activities(df_sensor_1, df_sensor_2, df_label,
-                                                                   V.REMOVE_ACTIVITIES)
+def generate_windows_for_one_subject(subject_path, data_type, viterbi):
+    subject_files_dictionary = get_subject_files_from_path(subject_path)
 
-        result_path = subject_path + '/WINDOW/'
+    df_sensor_1 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_1])
+    df_sensor_2 = load_dataframe(subject_path + '/' + subject_files_dictionary[V.SENSOR_2])
 
-        # Create windows
-        if data_type == "testing" or viterbi:
-            overlap = V.TESTING_OVERLAP
-            create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
-            create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
-        elif data_type == "training":
-            overlap = V.TRAINING_OVERLAP
-            create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
-            create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
-        elif data_type == "predicting":
-            overlap = V.PREDICTING_OVERLAP
-            create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+    if data_type != "predicting":
+        df_label = load_dataframe(subject_path + '/' + subject_files_dictionary[V.LABEL])
+
+    # Remove activities
+    if data_type == "training" and not viterbi:
+        df_sensor_1, df_sensor_2, df_label = remove_activities(df_sensor_1, df_sensor_2, df_label,
+                                                               V.REMOVE_ACTIVITIES)
+    result_path = subject_path + '/WINDOW/'
+    # Create windows
+    if data_type == "testing" or viterbi:
+        overlap = V.TESTING_OVERLAP
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
+    elif data_type == "training":
+        overlap = V.TRAINING_OVERLAP
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
+        create_window_label(df_label, result_path, V.WINDOW_LENGTH, overlap)
+    elif data_type == "predicting":
+        overlap = V.PREDICTING_OVERLAP
+        create_window_sensors(df_sensor_1, df_sensor_2, result_path, V.WINDOW_LENGTH, overlap)
 
 
 def find_most_common_label(l):
