@@ -7,8 +7,6 @@
   * [Tensorflow](https://www.tensorflow.org/versions/r0.8/get_started/os_setup.html)
   * [Pandas](https://pypi.python.org/pypi/pandas/0.18.0/#downloads)
 
-
-
 File descrtiption: 
 - training.py. Training both the Convolutional Neural Network and the Viterbi transition matrix. Use data located in DATA/TRAINING. 
 
@@ -16,7 +14,7 @@ File descrtiption:
 
 - predicting.py. Predicting unlabelled data. Saves the prediction in RESULTS/RESULT_PREDICTING.py
 
-- cnn.py. Covolutional Neural Network, used both for training and testing. Configuration is done via the TRAINING_VARIABLES.py file. 
+- cnn.py. Convolutional Neural Network, used both for training and testing. Configuration is done via the TRAINING_VARIABLES.py file.
 
 - viterbi.py. Viterbi, used both for training and testing.
 
@@ -38,7 +36,7 @@ Example:
 Same structure as training and testing (explained over), but without annotation file (01A_GoPro_LAB_All.csv).
 
 ### Data structure
-The training and testing data need to be in a spesific format.  <br />
+The training and testing data need to be in a specific format.  <br />
 Sensor format: <br />
 ```
 -1.0156,-0.079657,-0.0015319
