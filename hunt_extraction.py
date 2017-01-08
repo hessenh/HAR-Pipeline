@@ -157,7 +157,7 @@ def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, 
     return events
 
 
-def extract_back_and_thigh(subject_id='008'):
+def extract_back_and_thigh(subject_id='008', sync_fix=True):
     master_sensor_codeword, slave_sensor_codewords = "THIGH", ["BACK"]
     starting_heel_drops, ending_heel_drops = 3, 3
     heel_drop_amplitude = 5
@@ -197,7 +197,8 @@ def extract_back_and_thigh(subject_id='008'):
             print("Synchronized sensor data file", synchronized_complete_path, "not found. Creating synchronized data.")
             master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
             slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-            create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_complete_path)
+            create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_complete_path,
+                                                 with_dirty_fix=sync_fix)
             print("Conversion finished.")
 
         synchronized_files.append(synchronized_complete_path)
@@ -362,4 +363,4 @@ def extract_wrist(subject_id):
 
 
 if __name__ == "__main__":
-    extract_back_and_thigh("005")
+    extract_back_and_thigh("012", sync_fix=False)
