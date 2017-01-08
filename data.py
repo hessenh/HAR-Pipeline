@@ -45,9 +45,11 @@ class DataSet(object):
         return self.data[start:end], self.labels[start:end]
 
 
-def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path, subject_list=None, normalize_sensor_data=False):
+def get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_path, subject_list=None,
+                 normalize_sensor_data=False):
     if generate_new_windows:
-        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list, normalize_data=normalize_sensor_data)
+        generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, subject_list,
+                                                normalize_data=normalize_sensor_data)
 
     df_sensor, df_label = load_windows(data_type, oversampling, subjects_path, subject_list)
     data_set = DataSet(df_sensor, df_label)
@@ -198,11 +200,24 @@ def create_window_label(df_label, folder, length, overlap):
     save_data_frame(df_window, folder, V.WINDOW_NAME_LABEL)
 
 
+def normalize_range(data_frame, new_min=-1, new_max=1):
+    df_min = data_frame.min()
+    df_max = data_frame.max()
+    old_range = df_max - df_min
+    new_range = new_max - new_min
+    ratio = new_range / old_range
+
+    data_frame = data_frame - df_min
+    data_frame = (data_frame * ratio) + new_min
+    return data_frame
+
+
 def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False):
     # Sensor 1
     if normalize_data:
-        df_sensor_1 = (df_sensor_1 - df_sensor_1.mean())/df_sensor_1.std()
-        df_sensor_2 = (df_sensor_2 - df_sensor_2.mean())/df_sensor_2.std()
+        print "normalizing"
+        df_sensor_1 = normalize_range(df_sensor_1)
+        df_sensor_2 = normalize_range(df_sensor_2)
     df_s_1_x = split_data_frame(df_sensor_1[0], length, overlap)
     df_s_1_y = split_data_frame(df_sensor_1[1], length, overlap)
     df_s_1_z = split_data_frame(df_sensor_1[2], length, overlap)
