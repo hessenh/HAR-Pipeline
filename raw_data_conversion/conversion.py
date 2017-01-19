@@ -40,8 +40,8 @@ def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clea
         # but is for some reason not.
         import time
         time.sleep(2)
-        master_start_time = subprocess.check_output(["grep", "-a", '"Time"', master_wav]).strip()[-23:]
-        slave_start_time = subprocess.check_output(["grep", "-a", '"Time"', slave_wav]).strip()[-23:]
+        master_start_time = subprocess.check_output(["grep", "-a", 'Time', master_wav]).strip()[-23:]
+        slave_start_time = subprocess.check_output(["grep", "-a", 'Time', slave_wav]).strip()[-23:]
 
         subprocess.call(["sed", "-i", "s/"+slave_start_time+"/"+master_start_time + "/g", slave_wav])
 
