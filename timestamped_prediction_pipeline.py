@@ -15,14 +15,29 @@ from scipy import signal
 V = TRAINING_VARIABLES.VARS()
 
 
-def predict_with_timestamps_for_subject(subject_id, all_subjects_folder):
+def predict_with_timestamps_for_subject(subject_id, residing_folder, master_cwa=None, slave_cwa=None,
+                                        output_csv=None, remove_auxiliary_files=True):
+    """
+    Creates a CSV with timestamped predictions for a subject given its ID and residing folder.
+
+    :param subject_id: This subject's ID (the name of the sub-folder)
+    :param residing_folder: The folder where the subject resides
+    :param master_cwa: (optional) location of master CWA
+    :param slave_cwa: (optional) location of slave CWA
+    :param output_csv: (optional) location to write output
+    :param remove_auxiliary_files: (optional) whether or not to remove auxiliary files
+    :return:
+    """
     time_start = time()
 
     # Names of files which are to be written
-    subject_folder = os.path.join(all_subjects_folder, subject_id)
+    subject_folder = os.path.join(residing_folder, subject_id)
 
-    master_sensor = os.path.join(subject_folder, subject_id + "_L.cwa")
-    slave_sensor = os.path.join(subject_folder, subject_id + "_R.cwa")
+    if master_cwa is None:
+        master_cwa = os.path.join(subject_folder, subject_id + "_L.cwa")
+    if slave_cwa is None:
+        slave_cwa = os.path.join(subject_folder, subject_id + "_R.cwa")
+
     synced_csv = os.path.join(subject_folder, subject_id + "_synced.csv")
 
     predictions_csv = os.path.join(subject_folder, subject_id + "_raw_predictions.csv")
@@ -36,12 +51,13 @@ def predict_with_timestamps_for_subject(subject_id, all_subjects_folder):
                                                      sensor_averages_csv]
 
     # The only file which is to remain after prediction
-    timestamped_predictions_csv = os.path.join(subject_folder, subject_id + "_timestamped_predictions.csv")
+    if output_csv is None:
+        timestamped_predictions_csv = os.path.join(subject_folder, subject_id + "_timestamped_predictions.csv")
 
     if (not os.path.isfile(master_csv)) or (not os.path.isfile(slave_csv)) or (not os.path.isfile(time_csv)) or (
             not os.path.isfile(sensor_averages_csv)):
         if not os.path.exists(synced_csv):
-            create_synchronized_file_for_subject(master_sensor, slave_sensor, synced_csv, clean_up=True,
+            create_synchronized_file_for_subject(master_cwa, slave_cwa, synced_csv, clean_up=remove_auxiliary_files,
                                                  with_dirty_fix=True)
 
         print("Reading synced CSV")
@@ -79,12 +95,12 @@ def predict_with_timestamps_for_subject(subject_id, all_subjects_folder):
                                           average_only_complete_windows=True, float_format="%.8f")
 
     print("Getting predictions")
-    predict(subject_list=[subject_id], subjects_folder=all_subjects_folder, output_file=predictions_csv,
+    predict(subject_list=[subject_id], subjects_folder=residing_folder, output_file=predictions_csv,
             with_viterbi=False)
 
     time_stop = time()
 
-    print("Adding timestamps to predictions, saving to", timestamped_predictions_csv)
+    print("Adding timestamps to predictions and saving to", timestamped_predictions_csv)
     timestamps = pd.read_csv(time_csv, parse_dates=[0], header=None)
     predictions = pd.read_csv(predictions_csv, header=None, converters={0: int}) + 1  # Add 1 to get real activity nos
     predictions = predictions.applymap(reverse_conversion)
@@ -92,16 +108,23 @@ def predict_with_timestamps_for_subject(subject_id, all_subjects_folder):
     timestamped_predictions = pd.concat([timestamps, sensor_averages, predictions], axis=1)
     timestamped_predictions.to_csv(timestamped_predictions_csv, header=False, index=False)
 
-    print("Removing auxilary files")
-    for f in files_that_should_be_removed_after_prediction:
-        os.remove(f)
+    if remove_auxiliary_files:
+        print("Removing auxiliary files")
+        for f in files_that_should_be_removed_after_prediction:
+            os.remove(f)
 
-    shutil.rmtree(os.path.join(subject_folder, "WINDOW"))
+        shutil.rmtree(os.path.join(subject_folder, "WINDOW"))
 
     print("Used", time_stop - time_start, "seconds in total")
 
 
 def get_all_predictable_subjects(root_folder=os.path.join(".", "DATA", "PREDICTING")):
+    """
+    Finds all subjects with the two required CWA files in the given folder and its sub-folders.
+
+    :param root_folder: The folder at which to start the search.
+    :return: A list of tuples [(folder, subject_id), ...]
+    """
     walk_from_root = os.walk(root_folder)
     i = 0
     subjects = []
@@ -121,10 +144,16 @@ def get_all_predictable_subjects(root_folder=os.path.join(".", "DATA", "PREDICTI
 
 
 def reverse_conversion(x):
+    """
+    Converts a number output by the CNN-Viterbi-pipeline back to the way it was annotated
+
+    :param x: Output number
+    :return: Label-style number
+    """
     return V.REVERSE_CONVERSION[x]
 
 
 if __name__ == "__main__":
     folders_and_subjects = get_all_predictable_subjects()
     for folder, subject in folders_and_subjects:
-        predict_with_timestamps_for_subject(subject_id=subject, all_subjects_folder=folder)
+        predict_with_timestamps_for_subject(subject_id=subject, residing_folder=folder)
