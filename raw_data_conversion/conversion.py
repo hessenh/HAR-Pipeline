@@ -36,8 +36,6 @@ def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clea
 
     if with_dirty_fix:
         # These lines are needed to synchronize the starting times of the files.
-        # What this carries out, should actually have had been fixed by the timesync script,
-        # but is for some reason not.
         import time
         time.sleep(2)
         master_start_time = subprocess.check_output(["grep", "-a", 'Time', master_wav]).strip()[-23:]
