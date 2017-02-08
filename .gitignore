@@ -69,5 +69,6 @@ crashlytics-build.properties
 fabric.properties
 
 # Added by Eirik on 2016-09-20
-/DATA/har/
-/private_data
+private_data/
+/RESULTS/RESULT_TESTING_JSON.json
+/VITERBI/TRANSITION_DICTIONARY.pkl

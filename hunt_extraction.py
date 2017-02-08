@@ -13,7 +13,7 @@ from raw_data_conversion.conversion import convert_subject_raw_file, create_sync
     set_header_names_for_data_generated_by_omconvert_script
 from tools.pandas_helpers import write_selected_columns_to_file
 
-SUBJECT_DATA_LOCATION = './private_data/annotated_data/'
+SUBJECT_DATA_LOCATION = os.path.join('.', 'private_data', 'annotated_data')
 
 
 def find_repeated_peaks(peak_array, required_peaks=3, sampling_frequency=100, min_interval=0.15, max_interval=8.0):
@@ -56,9 +56,7 @@ def find_claps_from_sensor_data(channel_data, sampling_frequency, mph=5, valley=
     return clap_times
 
 
-def combine_event_files_into_one_and_save(event_files_glob_expression, output_file):
-    filenames = sorted(glob.glob(event_files_glob_expression))
-
+def combine_event_files_into_one_and_save(filenames, output_file):
     dfs = []
     rolling_time_offset = 0
     first = True
@@ -123,14 +121,13 @@ def convert_string_labels_to_numbers(label_list):
     return [label_to_number_dict[label] for label in label_list]
 
 
-def extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression):
-    print("Reading events ...")
+def get_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression):
+    if not os.path.isfile(events_csv):
+        print("Combining separate event files into one")
+        filenames = sorted(glob.glob(event_files_glob_expression))
+        combine_event_files_into_one_and_save(filenames, events_csv)
 
-    try:
-        events = pd.read_csv(events_csv, sep=',')
-    except IOError:
-        print("Combined events file not found. Creating events file from separate files.")
-        events = combine_event_files_into_one_and_save(event_files_glob_expression, events_csv)
+    events = pd.read_csv(events_csv, sep=',')
 
     events = events[['start', 'end', 'duration', 'type']]
 
@@ -162,8 +159,8 @@ def extract_back_and_thigh(subject_id='008', sync_fix=True):
     starting_heel_drops, ending_heel_drops = 3, 3
     heel_drop_amplitude = 5
 
-    subject_folder = SUBJECT_DATA_LOCATION + subject_id
-    folder_and_subject_id = subject_folder + '/' + subject_id
+    subject_folder = os.path.join(SUBJECT_DATA_LOCATION, subject_id)
+    folder_and_subject_id = os.path.join(subject_folder, subject_id)
 
     original_sampling_frequency = 100
     sampling_frequency = 100  # in hertz
@@ -183,7 +180,7 @@ def extract_back_and_thigh(subject_id='008', sync_fix=True):
     except IOError:
         print("Could not find config file. Returning to default configurations")
 
-    events = extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
+    events = get_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
 
     synchronized_files = []
 
@@ -191,12 +188,14 @@ def extract_back_and_thigh(subject_id='008', sync_fix=True):
         print("\nReading sensor data ...")
 
         synchronized_csv = subject_id + "_" + master_sensor_codeword + '_' + slave_sensor_codeword + "_synchronized.csv"
-        synchronized_complete_path = subject_folder + '/' + synchronized_csv
+        synchronized_complete_path = os.path.join(subject_folder, synchronized_csv)
 
         if not os.path.isfile(synchronized_complete_path):
             print("Synchronized sensor data file", synchronized_complete_path, "not found. Creating synchronized data.")
-            master_cwa = glob.glob(subject_folder + "/*_" + master_sensor_codeword + "_*" + subject_id + ".cwa")[0]
-            slave_cwa = glob.glob(subject_folder + "/*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa")[0]
+            master_cwa = \
+                glob.glob(os.path.join(subject_folder, "*_" + master_sensor_codeword + "_*" + subject_id + ".cwa"))[0]
+            slave_cwa = \
+                glob.glob(os.path.join(subject_folder, "*_" + slave_sensor_codeword + "_*" + subject_id + ".cwa"))[0]
             create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_complete_path,
                                                  with_dirty_fix=sync_fix)
             print("Conversion finished.")
@@ -228,11 +227,11 @@ def extract_back_and_thigh(subject_id='008', sync_fix=True):
         print("Writing results to CSVs")
         a = time()
 
-        csv_output_folder = subject_folder + "/" + slave_sensor_codeword
+        csv_output_folder = os.path.join(subject_folder, slave_sensor_codeword)
 
-        master_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + master_sensor_codeword + "_Right.csv"
-        slave_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + slave_sensor_codeword + "_Back.csv"
-        label_csv = csv_output_folder + "/" + subject_id + "_GoPro_LAB_All.csv"
+        master_csv = os.path.join(csv_output_folder, subject_id + "_Axivity_" + master_sensor_codeword + "_Right.csv")
+        slave_csv = os.path.join(csv_output_folder, subject_id + "_Axivity_" + slave_sensor_codeword + "_Back.csv")
+        label_csv = os.path.join(csv_output_folder, subject_id + "_GoPro_LAB_All.csv")
 
         master_columns = ["Master-X", "Master-Y", "Master-Z"]
         slave_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
@@ -314,8 +313,8 @@ def extract_wrist(subject_id):
     starting_heel_drops, ending_heel_drops = 3, 0
     heel_drop_amplitude = 2
 
-    subject_folder = SUBJECT_DATA_LOCATION + subject_id
-    folder_and_subject_id = subject_folder + '/' + subject_id
+    subject_folder = os.path.join(SUBJECT_DATA_LOCATION, subject_id)
+    folder_and_subject_id = os.path.join(subject_folder, subject_id)
 
     original_sampling_frequency = 100
     sampling_frequency = 100  # in hertz
@@ -324,15 +323,15 @@ def extract_wrist(subject_id):
 
     event_files_glob_expression = folder_and_subject_id + "_FreeLiving_Event_*.txt"
 
-    events = extract_relevant_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
+    events = get_events(events_csv, starting_heel_drops, ending_heel_drops, event_files_glob_expression)
 
-    csv_files = glob.glob(subject_folder + "/*_" + sensor_codeword + "_*" + subject_id + ".csv")
+    csv_files = glob.glob(os.path.join(subject_folder, "*_" + sensor_codeword + "_*" + subject_id + ".csv"))
 
     if csv_files:
         wrist_csv = csv_files[0]
     else:
         print("Wrist CSV not found. Converting CWA file to CSV")
-        wrist_cwa = glob.glob(subject_folder + "/*_" + sensor_codeword + "_*" + subject_id + ".cwa")[0]
+        wrist_cwa = glob.glob(os.path.join(subject_folder, "*_" + sensor_codeword + "_*" + subject_id + ".cwa"))[0]
         wrist_csv = os.path.splitext(wrist_cwa)[0] + ".csv"
 
         convert_subject_raw_file(wrist_cwa, csv_outfile=wrist_csv)
@@ -350,8 +349,8 @@ def extract_wrist(subject_id):
 
     print("Writing results to CSVs")
 
-    csv_output_folder = subject_folder + "/" + sensor_codeword
-    labeled_csv = csv_output_folder + "/" + subject_id + "_Axivity_" + sensor_codeword + "_Labeled.csv"
+    csv_output_folder = os.path.join(subject_folder, sensor_codeword)
+    labeled_csv = os.path.join(csv_output_folder, subject_id + "_Axivity_" + sensor_codeword + "_Labeled.csv")
     labeled_columns = ["Accel-X (g)", " Accel-Y (g)", " Accel-Z (g)", "label"]
 
     if not os.path.exists(csv_output_folder):

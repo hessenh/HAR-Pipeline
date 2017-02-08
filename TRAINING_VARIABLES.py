@@ -9,9 +9,17 @@ class VARS(object):
     ''' Variables '''
     # Convertion of activities
     CONVERTION = {1: 1, 2: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 10: 8, 11: 8, 13: 9, 14: 10}
+    REVERSE_CONVERSION = {1: 1, 2: 2, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 10, 9: 13, 10: 14}
     REMOVE_ACTIVITIES = [0, 3, 9, 11, 16, 12, 15, 17, 18, 19]  # This has been extended with 18 and 19, Eirik
-    ACTIVITY_NAMES_CONVERTION = {1: 'WALKING', 2: 'RUNNING', 3: 'STAIRS (UP)', 4: 'STAIRS (DOWN)', 5: 'STANDING',
-                                 6: 'SITTING', 7: 'LYING', 8: 'BENDING', 9: 'CYCLING (SITTING)',
+    ACTIVITY_NAMES_CONVERTION = {1: 'WALKING',
+                                 2: 'RUNNING',
+                                 3: 'STAIRS (UP)',
+                                 4: 'STAIRS (DOWN)',
+                                 5: 'STANDING',
+                                 6: 'SITTING',
+                                 7: 'LYING',
+                                 8: 'BENDING',
+                                 9: 'CYCLING (SITTING)',
                                  10: 'CYCLING (STANDING)'}
     ACTIVITIES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     NUMBER_OF_ACTIVITIES = 10

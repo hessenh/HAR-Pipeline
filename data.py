@@ -270,9 +270,14 @@ def get_subject_files_from_path(subject_path):
     # 'LAB': '01A_GoPro_LAB_All.csv'
     subject_files_dictionary = {}
     for subject_file in subject_files:
-        file_split = subject_file.split("_")
-        # Using the third word as the key
-        subject_files_dictionary[file_split[2]] = subject_file
+        try:
+            file_split = subject_file.split("_")
+            # Using the third word as the key
+            subject_files_dictionary[file_split[2]] = subject_file
+        except IndexError:
+            print "IndexError occured when making dictionary of files in folder."
+            print "Filename did not contain two underscores."
+            print "File not added to the folder dictionary."
 
     return subject_files_dictionary
 

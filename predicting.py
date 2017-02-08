@@ -10,32 +10,40 @@ import json
 V = TRAINING_VARIABLES.VARS()
 
 
-def predict():
+def predict(subject_list=None, normalize_sensor_data=False, subjects_folder=None, output_file=None, with_viterbi=True):
+    if subjects_folder is None:
+        subjects_folder = V.PREDICTING_PATH
+    if output_file is None:
+        output_file = V.VITERBI_RESULT_PREDICTING
     # Load test data
     # Input: Testing, generate new windows, oversampling, viterbi training
     data_type = "predicting"
     generate_new_windows = True
     oversampling = False
     viterbi = False
-    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, V.PREDICTING_PATH)
+    data_set = get_data_set(data_type, generate_new_windows, oversampling, viterbi, subjects_folder,
+                            subject_list=subject_list, normalize_sensor_data=normalize_sensor_data)
 
     # Create network
     cnn = ConvolutionalNeuralNetwork()
     cnn.set_data_set(data_set)
     cnn.load_model()
-
     cnn_result = cnn.get_predictions()
+    if with_viterbi:
+        raw_predictions_path = V.VITERBI_PREDICTION_PATH_PREDICTING
+        np.savetxt(raw_predictions_path, cnn_result, delimiter=",")
 
-    raw_predictions_path = V.VITERBI_PREDICTION_PATH_PREDICTING
-    np.savetxt(raw_predictions_path, cnn_result, delimiter=",")
+        print "Running Viterbi"
+        viterbi_result = run_viterbi(raw_predictions_path)
 
-    viterbi_result = run_viterbi(raw_predictions_path)
+        data_frame = pd.DataFrame(viterbi_result)
 
-    data_frame = pd.DataFrame(viterbi_result)
+        data_frame.to_csv(output_file)
+    else:
+        max_indices = np.argmax(cnn_result, axis=1)
+        np.savetxt(output_file, max_indices, fmt="%1i")
 
-    data_frame.to_csv(V.VITERBI_RESULT_PREDICTING)
-
-    print 'Prediction saved at path', V.VITERBI_RESULT_PREDICTING
+    print 'Prediction saved at path', output_file
 
 
 # TODO: This is a duplicate of a function in testing.py
