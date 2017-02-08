@@ -18,7 +18,7 @@ def convert_subject_raw_file(input_file, csv_outfile=None, wav_outfile=None):
     subprocess.call(command)
 
 
-def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True):
+def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True, with_dirty_fix=True):
     from os.path import splitext
     import os
     import subprocess
@@ -34,15 +34,16 @@ def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clea
     if not os.path.exists(slave_wav):
         convert_subject_raw_file(slave_cwa, wav_outfile=slave_wav)
 
-    # These lines are needed to synchronize the starting times of the files.
-    # What this carries out, should actually have had been fixed by the timesync script,
-    # but is for some reason not.
-    import time
-    time.sleep(2)
-    master_start_time = subprocess.check_output(["grep", "-a", '"Time"', master_wav]).strip()[-23:]
-    slave_start_time = subprocess.check_output(["grep", "-a", '"Time"', slave_wav]).strip()[-23:]
+    if with_dirty_fix:
+        # These lines are needed to synchronize the starting times of the files.
+        # What this carries out, should actually have had been fixed by the timesync script,
+        # but is for some reason not.
+        import time
+        time.sleep(2)
+        master_start_time = subprocess.check_output(["grep", "-a", '"Time"', master_wav]).strip()[-23:]
+        slave_start_time = subprocess.check_output(["grep", "-a", '"Time"', slave_wav]).strip()[-23:]
 
-    subprocess.call(["sed", "-i", "s/"+slave_start_time+"/"+master_start_time + "/g", slave_wav])
+        subprocess.call(["sed", "-i", "s/"+slave_start_time+"/"+master_start_time + "/g", slave_wav])
 
     # Synchronize them and make them a CSV
     subprocess.call([timesync, master_wav, slave_wav, "-csv", output_csv])
