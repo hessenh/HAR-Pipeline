@@ -132,10 +132,9 @@ def test_upper_against_lower():
             """
 
 
-def leave_one_out_upperback():
+def leave_one_out(training_folder=os.path.join(".", "DATA", "TRAINING")):
     # Before running this, all testing data must be added do DATA/TRAINING
     root_folder = "./statistics/leave_one_out"
-    training_folder = "./DATA/TRAINING"
     walk_of_training_folder = list(os.walk(training_folder))
     all_test_ids = set(walk_of_training_folder[0][1])
     all_in_lab_ids = {_ for _ in all_test_ids if "A" in _}
@@ -185,7 +184,7 @@ def leave_one_out_upperback():
 
 
 def test_all_four_out_of_lab_sets(badly_synced=False, normalize=False):
-    root_folder = "./statistics/existing_system"
+    root_folder = os.path.join(".", "statistics", "existing_system")
     badly_synced_addition = "badly_synced" if badly_synced else ""
     if badly_synced:
         root_folder += "_badly_synced"
@@ -227,4 +226,4 @@ def test_all_four_out_of_lab_sets(badly_synced=False, normalize=False):
 
 
 if __name__ == "__main__":
-    normalization_comparison()
+    test_all_four_out_of_lab_sets()

@@ -1,3 +1,5 @@
+from scipy import signal
+
 import pandas as pd
 from os import listdir, makedirs
 from os.path import isfile, join, exists
@@ -212,8 +214,20 @@ def normalize_range(data_frame, new_min=-1, new_max=1):
     return data_frame
 
 
-def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False):
-    # Sensor 1
+def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False, filter_data=False):
+    if filter_data:
+        b, a = signal.butter(4, 0.3)
+
+        def _filter_series(s):
+            return signal.filtfilt(b, a, s)
+
+        def filter_dataframe(d):
+            for col in d:
+                d[col] = _filter_series(d[col])
+
+        filter_dataframe(df_sensor_1)
+        filter_dataframe(df_sensor_2)
+
     if normalize_data:
         print "normalizing"
         df_sensor_1 = normalize_range(df_sensor_1)
@@ -222,7 +236,6 @@ def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, nor
     df_s_1_y = split_data_frame(df_sensor_1[1], length, overlap)
     df_s_1_z = split_data_frame(df_sensor_1[2], length, overlap)
 
-    # Sensor 2
     df_s_2_x = split_data_frame(df_sensor_2[0], length, overlap)
     df_s_2_y = split_data_frame(df_sensor_2[1], length, overlap)
     df_s_2_z = split_data_frame(df_sensor_2[2], length, overlap)
