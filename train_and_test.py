@@ -134,40 +134,42 @@ def test_upper_against_lower():
 
 def leave_one_out(training_folder=os.path.join(".", "DATA", "TRAINING")):
     # Before running this, all testing data must be added do DATA/TRAINING
-    root_folder = "./statistics/leave_one_out"
+    root_folder = "./statistics/leave_one_child_out"
     walk_of_training_folder = list(os.walk(training_folder))
     all_test_ids = set(walk_of_training_folder[0][1])
     all_in_lab_ids = {_ for _ in all_test_ids if "A" in _}
     all_out_of_lab_ids = all_test_ids - all_in_lab_ids
 
-    for j in range(2, 4):
+    for j in range(3):
         run_folder = "run_" + format(j, "02")
-        # Testing using only in-lab data as training
-        sub_folder = "in_lab"
-        statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
-        if not os.path.exists(statistics_folder):
-            os.makedirs(statistics_folder)
 
-        for i, test_subject in enumerate(all_out_of_lab_ids):
-            session_training_subjects = all_in_lab_ids.copy()
-            current_statistics = os.path.join(statistics_folder, test_subject + ".json")
-            retrain_only_for_first_subject = i == 0
-            train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
-                           testing_subjects_list=[test_subject], retrain=retrain_only_for_first_subject,
-                           testing_subjects_folder=training_folder)
+        # # Testing using only in-lab data as training
+        # sub_folder = "in_lab"
+        # statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
+        # if not os.path.exists(statistics_folder):
+        #     os.makedirs(statistics_folder)
+        #
+        # for i, test_subject in enumerate(all_out_of_lab_ids):
+        #     session_training_subjects = all_in_lab_ids.copy()
+        #     current_statistics = os.path.join(statistics_folder, test_subject + ".json")
+        #     retrain_only_for_first_subject = i == 0
+        #     train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
+        #                    testing_subjects_list=[test_subject], retrain=retrain_only_for_first_subject,
+        #                    testing_subjects_folder=training_folder)
 
-        # Testing with mix-in of in-lab
-        sub_folder = "mix"
-        statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
-        if not os.path.exists(statistics_folder):
-            os.makedirs(statistics_folder)
 
-        for test_subject in all_out_of_lab_ids:
-            session_training_subjects = all_test_ids.copy()
-            session_training_subjects.remove(test_subject)
-            current_statistics = os.path.join(statistics_folder, test_subject + ".json")
-            train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
-                           testing_subjects_list=[test_subject], retrain=True, testing_subjects_folder=training_folder)
+        # # Testing with mix-in of in-lab
+        # sub_folder = "mix"
+        # statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
+        # if not os.path.exists(statistics_folder):
+        #     os.makedirs(statistics_folder)
+        #
+        # for test_subject in all_out_of_lab_ids:
+        #     session_training_subjects = all_test_ids.copy()
+        #     session_training_subjects.remove(test_subject)
+        #     current_statistics = os.path.join(statistics_folder, test_subject + ".json")
+        #     train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
+        #                    testing_subjects_list=[test_subject], retrain=True, testing_subjects_folder=training_folder)
 
         # Only using out-of-lab
         sub_folder = "out_of_lab"
@@ -179,7 +181,8 @@ def leave_one_out(training_folder=os.path.join(".", "DATA", "TRAINING")):
             session_training_subjects = all_out_of_lab_ids.copy()
             session_training_subjects.remove(test_subject)
             current_statistics = os.path.join(statistics_folder, test_subject + ".json")
-            train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
+            train_and_test(training_subject_list=session_training_subjects,
+                           statistics_save_path=current_statistics,
                            testing_subjects_list=[test_subject], retrain=True, testing_subjects_folder=training_folder)
 
 
@@ -226,4 +229,4 @@ def test_all_four_out_of_lab_sets(badly_synced=False, normalize=False):
 
 
 if __name__ == "__main__":
-    test_all_four_out_of_lab_sets()
+    leave_one_out()
