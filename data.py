@@ -2,11 +2,10 @@ from scipy import signal
 
 import pandas as pd
 from os import listdir, makedirs
-from os.path import isfile, join, exists
+from os.path import isfile, join, exists, splitext
 import numpy as np
 from collections import Counter
 from numpy.lib.stride_tricks import as_strided as ast
-import sklearn.preprocessing
 
 import TRAINING_VARIABLES
 
@@ -284,9 +283,10 @@ def get_subject_files_from_path(subject_path):
     subject_files_dictionary = {}
     for subject_file in subject_files:
         try:
-            file_split = subject_file.split("_")
-            # Using the third word as the key
-            subject_files_dictionary[file_split[2]] = subject_file
+            if splitext(subject_file)[1] == ".csv":
+                file_split = subject_file.split("_")
+                # Using the third word as the key
+                subject_files_dictionary[file_split[2]] = subject_file
         except IndexError:
             print "IndexError occured when making dictionary of files in folder."
             print "Filename did not contain two underscores."
