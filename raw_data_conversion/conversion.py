@@ -18,9 +18,8 @@ def convert_subject_raw_file(input_file, csv_outfile=None, wav_outfile=None):
     subprocess.call(command)
 
 
-def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True, with_dirty_fix=True):
+def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clean_up=True, sync_fix=True):
     from os.path import splitext
-    import os
     import subprocess
 
     timesync = TIMESYNC_LOCATION
@@ -28,13 +27,11 @@ def create_synchronized_file_for_subject(master_cwa, slave_cwa, output_csv, clea
     master_wav = splitext(master_cwa)[0] + ".wav"
     slave_wav = splitext(slave_cwa)[0] + ".wav"
 
-    if not os.path.exists(master_wav):
-        convert_subject_raw_file(master_cwa, wav_outfile=master_wav)
+    convert_subject_raw_file(master_cwa, wav_outfile=master_wav)
 
-    if not os.path.exists(slave_wav):
-        convert_subject_raw_file(slave_cwa, wav_outfile=slave_wav)
+    convert_subject_raw_file(slave_cwa, wav_outfile=slave_wav)
 
-    if with_dirty_fix:
+    if sync_fix:
         # These lines are needed to synchronize the starting times of the files.
         import time
         time.sleep(2)
