@@ -14,6 +14,9 @@ from scipy import signal
 
 V = TRAINING_VARIABLES.VARS()
 
+slave_ending = "_R.cwa"
+master_ending = "_L.cwa"
+
 
 def predict_with_timestamps_for_subject(subject_id, residing_folder, master_cwa=None, slave_cwa=None,
                                         output_csv=None, remove_auxiliary_files=True):
@@ -34,9 +37,9 @@ def predict_with_timestamps_for_subject(subject_id, residing_folder, master_cwa=
     subject_folder = os.path.join(residing_folder, subject_id)
 
     if master_cwa is None:
-        master_cwa = os.path.join(subject_folder, subject_id + "_L.cwa")
+        master_cwa = os.path.join(subject_folder, subject_id + master_ending)
     if slave_cwa is None:
-        slave_cwa = os.path.join(subject_folder, subject_id + "_R.cwa")
+        slave_cwa = os.path.join(subject_folder, subject_id + slave_ending)
 
     synced_csv = os.path.join(subject_folder, subject_id + "_synced.csv")
 
@@ -58,7 +61,7 @@ def predict_with_timestamps_for_subject(subject_id, residing_folder, master_cwa=
             not os.path.isfile(sensor_averages_csv)):
         if not os.path.exists(synced_csv):
             create_synchronized_file_for_subject(master_cwa, slave_cwa, synced_csv, clean_up=remove_auxiliary_files,
-                                                 with_dirty_fix=True)
+                                                 sync_fix=True)
 
         print("Reading synced CSV")
         synced = pd.read_csv(synced_csv, parse_dates=[0], header=None)
@@ -125,20 +128,14 @@ def get_all_predictable_subjects(root_folder=os.path.join(".", "DATA", "PREDICTI
     :param root_folder: The folder at which to start the search.
     :return: A list of tuples [(folder, subject_id), ...]
     """
-    walk_from_root = os.walk(root_folder)
-    i = 0
     subjects = []
-    while True:
-        try:
-            folder, subfolders, files = walk_from_root.next()
-            all_subjects_folder, subject_id = os.path.split(folder)
-            if os.path.exists(os.path.join(folder, subject_id + "_L.cwa")) and os.path.exists(
-                    os.path.join(folder, subject_id + "_R.cwa")):
-                subjects.append((all_subjects_folder, subject_id))
-                i += 1
-        except StopIteration:
-            print(i)
-            break
+    for f, _, _ in os.walk(root_folder):
+        all_subjects_folder, subject_id = os.path.split(f)
+        if os.path.exists(os.path.join(f, subject_id + master_ending)) and os.path.exists(
+                os.path.join(f, subject_id + slave_ending)):
+            subjects.append((all_subjects_folder, subject_id))
+        else:
+            print("Could not find two .cwa-files in", f)
 
     return subjects
 
@@ -154,6 +151,8 @@ def reverse_conversion(x):
 
 
 if __name__ == "__main__":
-    folders_and_subjects = get_all_predictable_subjects()
+    master_ending = "_femur.cwa"
+    slave_ending = "_vertebra.cwa"
+    folders_and_subjects = sorted(get_all_predictable_subjects())
     for folder, subject in folders_and_subjects:
         predict_with_timestamps_for_subject(subject_id=subject, residing_folder=folder)
