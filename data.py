@@ -289,7 +289,7 @@ def get_subject_files_from_path(subject_path):
     for subject_file in subject_files:
         try:
             if splitext(subject_file)[1] == ".csv":
-                file_split = subject_file.split("f")
+                file_split = subject_file.split("_")
                 # Using the third word as the key
                 subject_files_dictionary[file_split[2]] = subject_file
         except IndexError:
