@@ -76,10 +76,17 @@ class DataLoader:
         self.window_size = int(round(window_length * sample_frequency))
         self.step_size = int(round((1 - degree_of_overlap) * self.window_size))
 
-    def read_data(self, file_path, *args):
-        sensor_data = np.loadtxt(fname=file_path, delimiter=",")
+    def read_data(self, file_path, func_keywords, abs_vals=False, dtype="float", relabel_dict=None):
+        sensor_data = np.loadtxt(fname=file_path, delimiter=",", dtype=dtype)
 
-        if not args:
+        if relabel_dict:
+            for k in relabel_dict:
+                np.place(sensor_data, sensor_data == k, [relabel_dict[k]])
+
+        if abs_vals:
+            sensor_data = abs(sensor_data)
+
+        if not func_keywords:
             return sensor_data
 
         fs = []
@@ -89,7 +96,7 @@ class DataLoader:
 
             self.functions["column_products"] = [column_product_factory(t) for t in column_combinations]
 
-        for a in args:
+        for a in func_keywords:
             fs += self.functions[a]
 
         all_features = []
@@ -105,12 +112,15 @@ class DataLoader:
 
         return np.vstack(all_features)
 
-    def read_sensor_data(self, file_path):
-        return self.read_data(file_path, "means_and_std", "abs_means_and_std", "peak_acceleration",
-                              "column_products", "most_common")
+    def read_sensor_data(self, file_path, abs_vals=False):
+        if abs_vals:
+            kws = ["means_and_std", "peak_acceleration", "column_products"]
+        else:
+            kws = ["means_and_std", "abs_means_and_std", "peak_acceleration", "column_products"]
+        return self.read_data(file_path, kws, abs_vals=abs_vals)
 
-    def read_label_data(self, file_path):
-        return self.read_data(file_path, "most_common")
+    def read_label_data(self, file_path, relabel_dict):
+        return self.read_data(file_path, ["most_common"], dtype="int", relabel_dict=relabel_dict).ravel()
 
 
 if __name__ == "__main__":
