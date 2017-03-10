@@ -213,7 +213,8 @@ def normalize_range(data_frame, new_min=-1, new_max=1):
     return data_frame
 
 
-def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False, filter_data=False):
+def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False, filter_data=False, 
+                          absolute_data=True):
     if filter_data:
         b, a = signal.butter(4, 0.3)
 
@@ -231,6 +232,11 @@ def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, nor
         print "normalizing"
         df_sensor_1 = normalize_range(df_sensor_1)
         df_sensor_2 = normalize_range(df_sensor_2)
+
+    if absolute_data:
+        df_sensor_1 = df_sensor_1.abs()
+        df_sensor_2 = df_sensor_2.abs()
+
     df_s_1_x = split_data_frame(df_sensor_1[0], length, overlap)
     df_s_1_y = split_data_frame(df_sensor_1[1], length, overlap)
     df_s_1_z = split_data_frame(df_sensor_1[2], length, overlap)
