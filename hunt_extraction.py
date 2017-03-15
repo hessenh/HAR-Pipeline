@@ -3,20 +3,22 @@ from __future__ import division, print_function
 
 import glob
 import json
+from scipy import signal
 
 import matplotlib
 import os
 import pandas as pd
 
+from definitions import PROJECT_ROOT
 from external_modules.detect_peaks import detect_peaks
-from raw_data_conversion.conversion import create_synchronized_file_for_subject, \
+from raw_data_conversion.conversion import synchronize_sensors, \
     set_header_names_for_data_generated_by_omconvert_script
 from tools.pandas_helpers import write_selected_columns_to_file
 
 matplotlib.use("Agg")  # Choose non-interactive background
 import matplotlib.pyplot as plt
 
-SUBJECT_DATA_LOCATION = os.path.join('.', 'private_data', 'annotated_data')
+SUBJECT_DATA_LOCATION = os.path.join(PROJECT_ROOT, 'private_data', 'stroke-patients')
 folder_prefix = ""
 
 
@@ -105,7 +107,8 @@ def make_labels_for_timestamps(timestamps, labels_list, end_times_list):
 
     next_timestamp_index = 0
 
-    for label, end_time in zip(labels_list, end_times_list):
+    l = zip(labels_list, end_times_list)
+    for label, end_time in l:
         while next_timestamp_index < len(timestamps) and timestamps[next_timestamp_index] <= end_time:
             labels_for_timestamps.append(label)
             next_timestamp_index += 1
@@ -137,11 +140,6 @@ def convert_string_labels_to_numbers(label_list):
         "Transport(sitting)": 18,
         "Commute(standing)": 19
     }
-
-    for i, label in enumerate(label_list):
-        if type(label) is not type("santheunsth"):
-            print(i)
-            quit()
 
     return [label_to_number_dict[label] for label in label_list]
 
@@ -195,23 +193,22 @@ def extract_back_and_thigh(subject_id, sync_fix=True, clean_up=True):
         if not os.path.exists(csv_output_folder):
             os.makedirs(csv_output_folder)
 
-        if not os.path.exists(synchronized_complete_path):
-            print("Synchronized file not found. Creating synchronized data.")
-            master_cwa = glob.glob(os.path.join(subject_folder, "*_" + master_codeword + "_*" + sc.id + ".cwa"))[0]
-            slave_cwa = glob.glob(os.path.join(subject_folder, "*_" + slave_sensor_codeword + "_*" + sc.id + ".cwa"))[0]
-            create_synchronized_file_for_subject(master_cwa, slave_cwa, synchronized_complete_path, sync_fix=sync_fix)
-            print("Conversion finished.")
+        master_cwa = glob.glob(os.path.join(subject_folder, "*_" + master_codeword + "_*" + sc.id + ".cwa"))[0]
+        slave_cwa = glob.glob(os.path.join(subject_folder, "*_" + slave_sensor_codeword + "_*" + sc.id + ".cwa"))[0]
+        if os.path.exists(synchronized_complete_path):
+            sensor_readings = pd.read_csv(synchronized_complete_path, header=None, parse_dates=[0])
+        else:
+            sensor_readings = synchronize_sensors([master_cwa, slave_cwa], synchronized_complete_path,
+                                                  sync_fix=sync_fix)
 
-        print("Reading", synchronized_complete_path)
-        sensor_readings = pd.read_csv(synchronized_complete_path, parse_dates=[0], header=None)
-
-        heel_drop_column = 'Master-X'
+        sensor_readings.rename(columns={0: "Time"}, inplace=True)
+        heel_drop_column = 1
 
         if sc.sampling_frequency == 200:
             sensor_readings = sensor_readings[::2].reindex()
             print("Original sampling frequency of 200 Hz reduced to 100")
 
-        set_header_names_for_data_generated_by_omconvert_script(sensor_readings)
+        # set_header_names_for_data_generated_by_omconvert_script(sensor_readings)
 
         print("Finding claps ...")
 
@@ -221,8 +218,8 @@ def extract_back_and_thigh(subject_id, sync_fix=True, clean_up=True):
         # Write the results to csv
         print("Writing results to CSVs")
 
-        x_axes = labeled_sensor_readings[["Master-X", "Slave-X"]]
-        last_peak = detect_peaks(x_axes["Master-X"], mph=2, valley=True)[-1]
+        x_axes = labeled_sensor_readings[[1, 4]]
+        last_peak = detect_peaks(x_axes[1], mph=2, valley=True)[-1]
         x_axes[last_peak - 900:last_peak + 100].plot(title=slave_sensor_codeword, figsize=(25, 4),
                                                      colormap=plt.get_cmap("bwr"))
         plt.savefig(os.path.join(csv_output_folder, slave_sensor_codeword + ".png"))
@@ -232,8 +229,8 @@ def extract_back_and_thigh(subject_id, sync_fix=True, clean_up=True):
         slave_csv = os.path.join(csv_output_folder, sc.id + "_Axivity_" + "BACK" + "_Back.csv")
         label_csv = os.path.join(csv_output_folder, sc.id + "_GoPro_LAB_All.csv")
 
-        master_columns = ["Master-X", "Master-Y", "Master-Z"]
-        slave_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
+        master_columns = [1, 2, 3]
+        slave_columns = [4, 5, 6]
         label_columns = ["label"]
 
         csv_paths = [master_csv, slave_csv, label_csv]
@@ -295,7 +292,7 @@ def remove_sensor_data_before_heel_drops(data_frame, most_affected_column, subje
 
     offset = end_of_first_drops - 1000
 
-    slave_claps = find_claps(data_frame["Slave-X"][offset:], sampling_frequency, mph=subject_configuration.amplitude,
+    slave_claps = find_claps(data_frame[4][offset:], sampling_frequency, mph=subject_configuration.amplitude,
                              valley=True, required_claps=subject_configuration.start_peaks)
     slave_end = slave_claps[0][1] + offset
     print("Found heel drops in sensor data")
@@ -304,12 +301,12 @@ def remove_sensor_data_before_heel_drops(data_frame, most_affected_column, subje
     drops_diff = slave_end - end_of_first_drops
     if abs(drops_diff) > 1:
         shifted = data_frame.shift(-drops_diff)
-        for col in ["Slave-X", "Slave-Y", "Slave-Z"]:
+        for col in [4, 5, 6]:
             data_frame[col] = shifted[col]
     print("DIFF BETWEEN SLAVE AND MASTER:", drops_diff)
 
     # Save a plot of the axes
-    x_axes = data_frame[["Master-X", "Slave-X"]]
+    x_axes = data_frame[[1, 4]]
     plot_start = end_of_first_drops - 9 * sampling_frequency
     plot_end = end_of_first_drops + 1 * sampling_frequency
     x_axes[plot_start:plot_end].plot(title=synced_filename, figsize=(25, 4), colormap=plt.get_cmap("bwr"))
@@ -323,10 +320,108 @@ def remove_sensor_data_before_heel_drops(data_frame, most_affected_column, subje
     return data_frame
 
 
+def completely_new_method_for_extraction(subject_id, master_substring="THIGH", pre_conversion_fix=True, mph=5,
+                                         remove_master_file=True, filter_data=True):
+    sampling_frequency = 100
+    max_rows = 3600 * 6 * sampling_frequency
+    subject_folder = os.path.join(SUBJECT_DATA_LOCATION, subject_id)
+    output_folder = os.path.join(subject_folder, "output")
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Get annotations
+    annotations_glob = os.path.join(subject_folder, subject_id + "*_Event_*.txt")
+    annotation_files = sorted(glob.glob(annotations_glob))
+    annotations = combine_annotation_files(annotation_files)
+    annotations = remove_annotations_outside_heel_drops(annotations, starting_drops=3, ending_drops=0)
+
+    # Load files
+    slave_cwas = []
+    master_cwa = []
+
+    for root, _, files in os.walk(subject_folder):
+        for f in sorted(files):
+            if f.endswith(".cwa"):
+                if master_substring in f:
+                    master_cwa = [os.path.join(root, f)]
+                else:
+                    slave_cwas.append(os.path.join(root, f))
+
+    sync_file = os.path.join(subject_folder, subject_id + "_synchronized.csv")
+
+    cwas = master_cwa + slave_cwas
+    sensors_data_frame = synchronize_sensors(cwas, sync_file, nrows=max_rows, sync_fix=pre_conversion_fix)
+
+    sensors_data_frame.rename(columns={0: "Time"}, inplace=True)
+
+    if filter_data:
+        b, a = signal.butter(4, 0.1)
+
+        def _filter_series(s):
+            return signal.filtfilt(b, a, s)
+
+        def filter_dataframe(d):
+            for col in d:
+                if col == "Time":
+                    continue
+                d[col] = _filter_series(d[col])
+
+        filter_dataframe(sensors_data_frame)
+
+    # TODO: Extra synchronization?
+
+    # Remove data outside of labels
+    start_peaks_index = find_claps(sensors_data_frame[1], sampling_frequency, mph=mph)[0][1]
+    print("Heel drops index:", start_peaks_index)
+    start_peaks_time = sensors_data_frame["Time"][start_peaks_index]
+    labeled_area_duration = annotations["end"].iloc[-1]
+    labeled_area_endtime = start_peaks_time + pd.Timedelta(seconds=labeled_area_duration)
+
+    indices_of_labeled_data_points = (start_peaks_time <= sensors_data_frame["Time"]) & (
+        sensors_data_frame["Time"] < labeled_area_endtime)
+
+    number_of_columns = sensors_data_frame.shape[1]
+    x_column_numbers = [i for i in range(1, number_of_columns, 3)]
+
+    x_axes = sensors_data_frame[x_column_numbers]
+    column_rename_dict = dict([(i, os.path.split(c)[1]) for i, c in zip(x_column_numbers, cwas)])
+    x_axes.rename(columns=column_rename_dict, inplace=True)
+    plot_start = start_peaks_index - 9 * sampling_frequency
+    plot_end = start_peaks_index + 1 * sampling_frequency
+    ax = x_axes[plot_start:plot_end].plot(title=subject_id + " heel drops", figsize=(10, 4), fontsize=8)
+    ax.legend(prop={'size': 8})
+    plt.savefig(os.path.join(output_folder, subject_id + "_heeldrops.png"))
+    plt.close()
+
+    sensors_data_frame = sensors_data_frame[indices_of_labeled_data_points]
+    sensors_data_frame.reset_index(inplace=True, drop=True)
+
+    absolute_ends = pd.to_timedelta(annotations["end"], unit="s") + start_peaks_time
+    labels = make_labels_for_timestamps(sensors_data_frame["Time"], annotations["type"], absolute_ends)
+    labels = pd.Series(labels)
+
+    label_file = os.path.join(output_folder, subject_id + "_labels.csv")
+
+    labels.to_csv(label_file, header=False, index=False)
+
+    for i, cwa_file_path in zip(x_column_numbers, cwas):
+        columns_to_save = [i + j for j in range(3)]
+        sub_data_frame = sensors_data_frame[columns_to_save]
+        cwa_file_name = os.path.split(cwa_file_path)[1]
+        output_file_name = os.path.splitext(cwa_file_name)[0] + ".csv"
+        output_file_path = os.path.join(output_folder, output_file_name)
+        sub_data_frame.to_csv(output_file_path, header=False, index=False)
+
+    if remove_master_file:
+        os.remove(sync_file)
+
+
 if __name__ == "__main__":
-    for i in [6]:
-        if i == 7:
+    print(SUBJECT_DATA_LOCATION)
+    for i in range(1, 8):
+        if i in [4, 6]:
             continue
-        s_id = "{0:0>3}".format(i)
+        s_id = "S{0:0>2}".format(i)
         print(s_id)
-        extract_back_and_thigh(s_id, sync_fix=True)
+        completely_new_method_for_extraction(s_id, pre_conversion_fix=False, master_substring="LT", mph=2,
+                                             remove_master_file=False, filter_data=True)

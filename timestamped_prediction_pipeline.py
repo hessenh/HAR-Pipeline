@@ -6,7 +6,7 @@ import pandas as pd
 import TRAINING_VARIABLES
 
 from time import time
-from raw_data_conversion.conversion import create_synchronized_file_for_subject, \
+from raw_data_conversion.conversion import synchronize_sensors, \
     set_header_names_for_data_generated_by_omconvert_script
 from tools.pandas_helpers import write_selected_columns_to_file, average_columns_and_write_to_file
 from predicting import predict
@@ -59,12 +59,9 @@ def predict_with_timestamps_for_subject(subject_id, residing_folder, master_cwa=
 
     if (not os.path.isfile(master_csv)) or (not os.path.isfile(slave_csv)) or (not os.path.isfile(time_csv)) or (
             not os.path.isfile(sensor_averages_csv)):
-        if not os.path.exists(synced_csv):
-            create_synchronized_file_for_subject(master_cwa, slave_cwa, synced_csv, clean_up=remove_auxiliary_files,
-                                                 sync_fix=True)
-
         print("Reading synced CSV")
-        synced = pd.read_csv(synced_csv, parse_dates=[0], header=None)
+        synced = synchronize_sensors([master_cwa, slave_cwa], synced_csv, clean_up=remove_auxiliary_files,
+                                     sync_fix=True)
         set_header_names_for_data_generated_by_omconvert_script(synced)
 
         print("Writing sensor readings and time stamps to files")
