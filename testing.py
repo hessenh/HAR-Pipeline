@@ -4,13 +4,17 @@ from viterbi import run_viterbi
 import numpy as np
 import TRAINING_VARIABLES
 import pandas as pd
-import matplotlib.pyplot as plt
 import json
+import os
+
+import matplotlib
+matplotlib.use("Agg")  # Choose non-interactive background
+import matplotlib.pyplot as plt
 
 V = TRAINING_VARIABLES.VARS()
 
 
-def test(statistics_save_path=None, subject_list=None, normalize_sensor_data=False, subjects_folder=None):
+def test(statistics_save_path=None, subject_list=None, normalize_sensor_data=False, subjects_folder=None, confusion_matrix_save_path=None):
     if subjects_folder is None:
         subjects_folder = V.TESTING_PATH
     if statistics_save_path is None:
@@ -59,7 +63,11 @@ def test(statistics_save_path=None, subject_list=None, normalize_sensor_data=Fal
     produce_statistics_json(result, statistics_save_path)
     cnn.close_session()
 
-    # visualize(result)
+    if confusion_matrix_save_path:
+        head, tail = os.path.splitext(confusion_matrix_save_path)
+        percentage_path = head + "_percentage" + tail
+        show_confusion_matrix(result.copy(), index=1, save_path=confusion_matrix_save_path)
+        show_confusion_matrix(result.copy(), index=1, save_path=percentage_path, percentage_labels=True)
 
 
 # TODO: This is a duplicate of a function in predicting.py
@@ -126,7 +134,7 @@ def get_score(result_matrix):
     return [accuracy, specificity, precision, recall]
 
 
-def visualize(result_matrix):
+def visualize(result_matrix, save_path):
     for i in range(0, len(result_matrix)):
         result_matrix[i][0] = V.VISUALIZATION_CONVERTION[result_matrix[i][0] + 1]
         result_matrix[i][1] = V.VISUALIZATION_CONVERTION[result_matrix[i][1] + 1]
@@ -166,10 +174,10 @@ def visualize(result_matrix):
     axes.set_ylim([0.9, 10.4])
     plt.yticks(y_axis, y_values)
     plt.plot(viterbi)
-    plt.show()
+    plt.savefig(save_path)
 
 
-def show_confusion_matrix(result_matrix, index):
+def show_confusion_matrix(result_matrix, index, save_path, percentage_labels=False):
     for i in range(0, len(result_matrix)):
         result_matrix[i][0] = V.VISUALIZATION_CONVERTION[result_matrix[i][0] + 1]
         result_matrix[i][1] = V.VISUALIZATION_CONVERTION[result_matrix[i][1] + 1]
@@ -182,7 +190,7 @@ def show_confusion_matrix(result_matrix, index):
         confusion_matrix[actual - 1][predicted - 1] += 1.0
 
     row_sums = confusion_matrix.sum(axis=1)
-    norm_conf = confusion_matrix / row_sums[:, np.newaxis]
+    norm_conf = (confusion_matrix.transpose() / row_sums).transpose()
 
     fig = plt.figure()
     plt.clf()
@@ -194,20 +202,27 @@ def show_confusion_matrix(result_matrix, index):
     width = len(confusion_matrix)
     height = len(confusion_matrix[0])
 
-    for x in xrange(width):
-        for y in xrange(height):
-            ax.annotate(str(confusion_matrix[x][y]), xy=(y, x),
+    if percentage_labels:
+        label_array = norm_conf * 100
+        format_spec = ".1f"
+    else:
+        label_array = confusion_matrix
+        format_spec = ".0f"
+
+    for x in range(width):
+        for y in range(height):
+            ax.annotate(format(label_array[x][y], format_spec), xy=(y, x),
                         horizontalalignment='center',
                         verticalalignment='center')
 
     cb = fig.colorbar(res)
 
     plt.title('Confusion Matrix')
-    labels = ['Lying', 'Sitting', 'Standing', 'Walking', 'Stairs (up)', 'Stairs (down)', 'Cycling (sit)',
+    tick_labels = ['Lying', 'Sitting', 'Standing', 'Walking', 'Stairs (up)', 'Stairs (down)', 'Cycling (sit)',
               'Cycling (stand)', 'Bending', 'Running']
-    plt.xticks(range(width), labels, rotation='vertical')
-    plt.yticks(range(height), labels)
-    plt.show()
+    plt.xticks(range(width), tick_labels, rotation='vertical')
+    plt.yticks(range(height), tick_labels)
+    plt.savefig(save_path)
 
 
 if __name__ == "__main__":

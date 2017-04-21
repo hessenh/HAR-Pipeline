@@ -1,3 +1,4 @@
+from __future__ import print_function
 from scipy import signal
 
 import pandas as pd
@@ -68,13 +69,13 @@ def load_windows(data_type, oversampling, subjects_path, subject_list=None):
     all_subjects_in_folder = get_folder_names(subjects_path)
 
     if len(all_subjects_in_folder) == 0:
-        print "No subjects found!"
+        print("No subjects found!")
 
     for subject_id in all_subjects_in_folder:
         if subject_list:
             if subject_id not in subject_list:
                 continue
-        print subject_id
+        print(subject_id)
         subject_window_path = subjects_path + '/' + subject_id + '/WINDOW/'
 
         df_sensor_temp = load_dataframe(subject_window_path + 'SENSORS.csv').as_matrix()
@@ -92,7 +93,7 @@ def load_windows(data_type, oversampling, subjects_path, subject_list=None):
         all_label_dataframes = np.vstack(individual_label_dataframes)
 
     if data_type == "training" and oversampling:
-        print 'OVERSAMPLING'
+        print('OVERSAMPLING')
         data_sensor = all_sensor_dataframes
         data_label = all_label_dataframes
 
@@ -135,7 +136,7 @@ def generate_windows_for_subjects_in_folder(data_type, viterbi, subjects_path, s
         if subject_list:
             if subject_name not in subject_list:
                 continue
-        print subject_name
+        print(subject_name)
         subject_path = subjects_path + '/' + subject_name
 
         generate_windows_for_one_subject(subject_path, data_type, viterbi, normalize_data=normalize_data)
@@ -213,6 +214,7 @@ def normalize_range(data_frame, new_min=-1, new_max=1):
     return data_frame
 
 
+
 def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, normalize_data=False, filter_data=False, 
                           absolute_data=True):
     if filter_data:
@@ -229,7 +231,7 @@ def create_window_sensors(df_sensor_1, df_sensor_2, folder, length, overlap, nor
         filter_dataframe(df_sensor_2)
 
     if normalize_data:
-        print "normalizing"
+        print("normalizing")
         df_sensor_1 = normalize_range(df_sensor_1)
         df_sensor_2 = normalize_range(df_sensor_2)
 
@@ -254,7 +256,7 @@ def save_data_frame(df, folder, file_name):
     # Check if folder exists, if not, create one
     if not exists(folder):
         makedirs(folder)
-    print folder + file_name
+    print(folder + file_name)
     df.to_csv(folder + file_name + '.csv', header=None, index=False)
 
 
@@ -294,9 +296,9 @@ def get_subject_files_from_path(subject_path):
                 # Using the third word as the key
                 subject_files_dictionary[file_split[2]] = subject_file
         except IndexError:
-            print "IndexError occured when making dictionary of files in folder."
-            print "Filename did not contain two underscores."
-            print "File not added to the folder dictionary."
+            print("IndexError occured when making dictionary of files in folder.")
+            print("Filename did not contain two underscores.")
+            print("File not added to the folder dictionary.")
 
     return subject_files_dictionary
 

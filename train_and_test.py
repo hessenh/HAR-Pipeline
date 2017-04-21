@@ -5,14 +5,20 @@ import gc
 import random
 import os
 
+EXPERIMENT_HOME = os.path.join(".", "experiment_results")
+CONFUSION_HOME = os.path.join(EXPERIMENT_HOME, "confusion_matrices")
+STATISTICS_HOME = os.path.join(EXPERIMENT_HOME, "statistics")
+
 
 def train_and_test(training_subject_list=None, statistics_save_path=None, normalize_sensor_data=False,
-                   testing_subjects_list=None, retrain=True, testing_subjects_folder=None):
+                   testing_subjects_list=None, retrain=True, testing_subjects_folder=None,
+                   confusion_matrix_save_path=None):
     if retrain:
         train(subject_list=training_subject_list, normalize_sensor_data=normalize_sensor_data)
         gc.collect()
     test(subject_list=testing_subjects_list, statistics_save_path=statistics_save_path,
-         normalize_sensor_data=normalize_sensor_data, subjects_folder=testing_subjects_folder)
+         normalize_sensor_data=normalize_sensor_data, subjects_folder=testing_subjects_folder,
+         confusion_matrix_save_path=confusion_matrix_save_path)
     gc.collect()
 
 
@@ -132,58 +138,39 @@ def test_upper_against_lower():
             """
 
 
-def leave_one_out(training_folder=os.path.join(".", "DATA", "TRAINING")):
-    # Before running this, all testing data must be added do DATA/TRAINING
-    root_folder = "./statistics/leave_one_child_out"
+def leave_one_out(experiment_name, runs=3, training_folder=os.path.join(".", "DATA", "TRAINING")):
+    # Before running this, all testing data must be added to DATA/TRAINING
+
+    my_confusion_root = os.path.join(CONFUSION_HOME, experiment_name)
+    my_statistics_root = os.path.join(STATISTICS_HOME, experiment_name)
+
     walk_of_training_folder = list(os.walk(training_folder))
-    all_test_ids = set(walk_of_training_folder[0][1])
-    all_in_lab_ids = {_ for _ in all_test_ids if "A" in _}
-    all_out_of_lab_ids = all_test_ids - all_in_lab_ids
+    all_subject_ids = set(walk_of_training_folder[0][1])
+    all_in_lab_ids = {_ for _ in all_subject_ids if "A" in _}
+    all_out_of_lab_ids = all_subject_ids - all_in_lab_ids
 
-    for j in range(3):
+    for j in range(runs):
         run_folder = "run_" + format(j, "02")
+        run_statistics_folder = os.path.join(my_statistics_root, run_folder)
+        run_confusion_folder = os.path.join(my_confusion_root, run_folder)
 
-        # # Testing using only in-lab data as training
-        # sub_folder = "in_lab"
-        # statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
-        # if not os.path.exists(statistics_folder):
-        #     os.makedirs(statistics_folder)
-        #
-        # for i, test_subject in enumerate(all_out_of_lab_ids):
-        #     session_training_subjects = all_in_lab_ids.copy()
-        #     current_statistics = os.path.join(statistics_folder, test_subject + ".json")
-        #     retrain_only_for_first_subject = i == 0
-        #     train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
-        #                    testing_subjects_list=[test_subject], retrain=retrain_only_for_first_subject,
-        #                    testing_subjects_folder=training_folder)
+        if not os.path.exists(run_statistics_folder):
+            os.makedirs(run_statistics_folder)
 
+        if not os.path.exists(run_confusion_folder):
+            os.makedirs(run_confusion_folder)
 
-        # # Testing with mix-in of in-lab
-        # sub_folder = "mix"
-        # statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
-        # if not os.path.exists(statistics_folder):
-        #     os.makedirs(statistics_folder)
-        #
-        # for test_subject in all_out_of_lab_ids:
-        #     session_training_subjects = all_test_ids.copy()
-        #     session_training_subjects.remove(test_subject)
-        #     current_statistics = os.path.join(statistics_folder, test_subject + ".json")
-        #     train_and_test(training_subject_list=session_training_subjects, statistics_save_path=current_statistics,
-        #                    testing_subjects_list=[test_subject], retrain=True, testing_subjects_folder=training_folder)
-
-        # Only using out-of-lab
-        sub_folder = "out_of_lab"
-        statistics_folder = os.path.join(root_folder, sub_folder, run_folder)
-        if not os.path.exists(statistics_folder):
-            os.makedirs(statistics_folder)
-
-        for test_subject in all_out_of_lab_ids:
+        for test_subject in all_subject_ids:
             session_training_subjects = all_out_of_lab_ids.copy()
             session_training_subjects.remove(test_subject)
-            current_statistics = os.path.join(statistics_folder, test_subject + ".json")
+            current_statistics = os.path.join(run_statistics_folder, test_subject + ".json")
+            if os.path.exists(current_statistics):
+                continue
+            print("Leaving", test_subject, "out")
             train_and_test(training_subject_list=session_training_subjects,
                            statistics_save_path=current_statistics,
-                           testing_subjects_list=[test_subject], retrain=True, testing_subjects_folder=training_folder)
+                           testing_subjects_list=[test_subject], retrain=True, testing_subjects_folder=training_folder,
+                           confusion_matrix_save_path=os.path.join(run_confusion_folder, test_subject + ".png"))
 
 
 def test_all_four_out_of_lab_sets(badly_synced=False, normalize=False):
@@ -229,4 +216,4 @@ def test_all_four_out_of_lab_sets(badly_synced=False, normalize=False):
 
 
 if __name__ == "__main__":
-    leave_one_out()
+    leave_one_out("20170226_normal_values")
