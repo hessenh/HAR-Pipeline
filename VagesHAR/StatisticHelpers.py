@@ -9,13 +9,15 @@ import numpy as np
 import matplotlib
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix
 
-matplotlib.use("Agg")  # Choose non-interactive background
+matplotlib.use("Agg")  # Set non-interactive background. Must precede pyplot import.
 import matplotlib.pyplot as plt
 
 
 def save_confusion_matrix_image(matrix, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.summer,
                                 save_path="./whatever.png"):
     """
+    Modified version of http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+    
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
@@ -79,3 +81,30 @@ def generate_and_save_confusion_matrix(y_true, y_pred, number_to_label_dict, sav
     all_occurring_classes = set(y_pred) | original_labels
     class_names = [number_to_label_dict[x] for x in sorted(list(all_occurring_classes))]
     save_confusion_matrix_image(matrix, class_names, save_path=save_path, title=title)
+
+
+def f_score(tp, fp, fn, beta):
+    beta_squared = beta * beta
+    score = (1 + beta_squared) * tp / ((1 + beta_squared) * tp + beta_squared * fn + fp)
+    return score
+
+
+def print_accuracies(statistic_folder):
+    subjects = ["overall", "S01", "S02", "S03", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12"]
+
+    for k in ["general_population", "adaptation", "best_individual"]:
+        print()
+        print(k)
+        print("\t" + "\t".join(subjects))
+        for root, dirs, files in os.walk(statistic_folder):
+            if k in root:
+                print(os.path.split(os.path.split(root)[0])[1], end="\t")
+                for s in subjects:
+                    f = os.path.join(root, s + ".json")
+                    if os.path.exists(f):
+                        with open(f, "r") as g:
+                            print(json.load(g)["accuracy"], end="\t")
+                    else:
+                        print("", end="\t")
+
+                print()

@@ -1,35 +1,38 @@
 from __future__ import print_function
 
-import os
 import numpy as np
 from collections import Counter
 
 
-def generate_all_combinations(k):
-    combinations = dict()
-    for i in range(1, k + 1):
-        if i == 1:
-            combinations[i] = set([(j,) for j in range(k)])
-        else:
-            combinations[i] = set()
-            for t in combinations[i - 1]:
-                largest_element = t[-1]
-                for j in range(largest_element + 1, k):
-                    l = list(t)
-                    l.append(j)
-                    new_combination = tuple(l)
-                    combinations[i].add(new_combination)
+def generate_all_integer_combinations(stop_integer):
+    combinations_of_certain_length = dict()
+    combinations_of_certain_length[1] = {(j,) for j in range(stop_integer)}
 
-    vs = [sorted(list(combinations[j])) for j in range(2, k + 1)]
-    return reduce(lambda x, y: x + y, vs)
+    for i in range(2, stop_integer + 1):
+        combinations_of_certain_length[i] = set()
+        for t in combinations_of_certain_length[i - 1]:
+            largest_element = t[-1]
+            for j in range(largest_element + 1, stop_integer):
+                l = list(t)
+                l.append(j)
+                new_combination = tuple(l)
+                combinations_of_certain_length[i].add(new_combination)
+
+    values = [sorted(list(combinations_of_certain_length[j])) for j in range(2, stop_integer + 1)]
+
+    reduced_list = []
+    for value in values:
+        reduced_list += value
+
+    return reduced_list
 
 
-def peak_acceleration(a):
-    return max(np.linalg.norm(a, axis=1))
+def peak_acceleration(array):
+    return max(np.linalg.norm(array, axis=1))
 
 
-def max_and_mins(a):
-    return np.hstack(a.max())
+def max_and_mins(array):
+    return np.hstack(array.max())
 
 
 def means_and_std_factory(absolute_values=False):
@@ -41,25 +44,31 @@ def means_and_std_factory(absolute_values=False):
     return means_and_std
 
 
-def most_frequent_value(a):
-    if len(a.shape) > 1:
+def most_frequent_value(array):
+    if len(array.shape) > 1:
         most_common = []
-        for column in a.T:
+        for column in array.T:
             counts = Counter(column)
             top = counts.most_common(1)[0][0]
             most_common.append(top)
 
         return np.array(most_common)
 
-    counts = Counter(a)
+    counts = Counter(array)
     top = counts.most_common(1)[0][0]
     return np.array([top])
 
 
 def column_product_factory(columns):
-    def columns_product(a):
-        transposed = np.transpose(a)[[columns]]  # Transpose for simpler logic
-        product = np.transpose(reduce(lambda x, y: x * y, transposed))
+    def columns_product(array):
+        transposed = np.transpose(array)[[columns]]  # Transpose for simpler logic
+
+        product = np.ones(transposed.shape[1])
+        for row in transposed:
+            product *= row
+
+        product = np.transpose(product)
+
         return np.array([product.mean(), product.std()])
 
     return columns_product
@@ -92,7 +101,7 @@ class DataLoader:
         fs = []
 
         if len(sensor_data.shape) > 1:
-            column_combinations = generate_all_combinations(sensor_data.shape[1])
+            column_combinations = generate_all_integer_combinations(sensor_data.shape[1])
 
             self.functions["column_products"] = [column_product_factory(t) for t in column_combinations]
 
@@ -121,17 +130,3 @@ class DataLoader:
 
     def read_label_data(self, file_path, relabel_dict):
         return self.read_data(file_path, ["most_common"], dtype="int", relabel_dict=relabel_dict).ravel()
-
-
-if __name__ == "__main__":
-    thigh_sensor = os.path.join("..", "DATA", "inlab_dataset", "01A", "01A_Axivity_THIGH_Right.csv")
-    dl = DataLoader(100, 2, 0)
-    acceleration_data = dl.read_sensor_data(thigh_sensor)
-
-    print(acceleration_data.shape)
-
-    label_file = os.path.join("..", "DATA", "inlab_dataset", "01A", "01A_GoPro_LAB_All.csv")
-    label_data = dl.read_label_data(label_file)
-
-    print(label_data)
-    print(label_data.shape)
