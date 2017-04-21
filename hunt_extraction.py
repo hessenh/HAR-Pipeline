@@ -17,7 +17,7 @@ import numpy as np
 matplotlib.use("Agg")  # Choose non-interactive background
 import matplotlib.pyplot as plt
 
-SUBJECT_DATA_LOCATION = os.path.join(PROJECT_ROOT, 'private_data', 'annotated_data')
+SUBJECT_DATA_LOCATION = os.path.join(PROJECT_ROOT, 'private_data', 'stroke-patients')
 folder_prefix = ""
 
 
@@ -114,7 +114,11 @@ def convert_string_labels_to_numbers(label_list):
         "non-vigorous activity": 17,
         "Car": 18,
         "Transport(sitting)": 18,
-        "Commute(standing)": 19
+        "Commute(standing)": 19,
+        "lying (prone)": 20,
+        "lying (supine)": 21,
+        "lying (left)": 22,
+        "lying (right)": 23
     }
 
     return [label_to_number_dict[label] for label in label_list]
@@ -251,7 +255,7 @@ if __name__ == "__main__":
     except AttributeError:
         non_existent_ids = []
 
-    for i in [21]:
+    for i in [10, 11, 12]:
         if i in non_existent_ids:
             continue
 
@@ -287,7 +291,7 @@ if __name__ == "__main__":
             shifts = None
 
         extract(s_id, cwas, pre_conversion_fix=subject_config.getboolean("pre_conversion_fix"),
-                mph=subject_config.getfloat("mph"), clean_up=False, sensor_label_sync_index=start_index, shifts=shifts,
+                mph=subject_config.getfloat("mph"), clean_up=True, sensor_label_sync_index=start_index, shifts=shifts,
                 starting_drops=subject_config.getint("start_drops"),
                 sampling_frequency=subject_config.getint("sampling_frequency"),
                 max_hours_to_read=subject_config.getint("max_hours_to_read"))
