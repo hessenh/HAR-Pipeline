@@ -98,15 +98,15 @@ class DataLoader:
         if not func_keywords:
             return sensor_data
 
-        fs = []
+        functions = []
 
         if len(sensor_data.shape) > 1:
             column_combinations = generate_all_integer_combinations(sensor_data.shape[1])
 
             self.functions["column_products"] = [column_product_factory(t) for t in column_combinations]
 
-        for a in func_keywords:
-            fs += self.functions[a]
+        for name in func_keywords:
+            functions += self.functions[name]
 
         all_features = []
 
@@ -116,17 +116,17 @@ class DataLoader:
                 break
             window = sensor_data[window_start:window_end]
 
-            extracted_features = [f(window) for f in fs]
+            extracted_features = [func(window) for func in functions]
             all_features.append(np.hstack(extracted_features))
 
         return np.vstack(all_features)
 
     def read_sensor_data(self, file_path, abs_vals=False):
         if abs_vals:
-            kws = ["means_and_std", "peak_acceleration", "column_products"]
+            keywords = ["means_and_std", "peak_acceleration", "column_products"]
         else:
-            kws = ["means_and_std", "abs_means_and_std", "peak_acceleration", "column_products"]
-        return self.read_data(file_path, kws, abs_vals=abs_vals)
+            keywords = ["means_and_std", "abs_means_and_std", "peak_acceleration", "column_products"]
+        return self.read_data(file_path, keywords, abs_vals=abs_vals)
 
     def read_label_data(self, file_path, relabel_dict):
         return self.read_data(file_path, ["most_common"], dtype="int", relabel_dict=relabel_dict).ravel()
