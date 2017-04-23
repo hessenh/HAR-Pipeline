@@ -79,9 +79,3 @@ def synchronize_sensors(cwas, output_csv, clean_up=True, sync_fix=True, nrows=No
             subprocess.call(["rm", f])
 
     return output_dataframe
-
-
-def set_header_names_for_data_generated_by_omconvert_script(data_frame):
-    data_frame.rename(
-        columns={0: 'Time', 1: 'Master-X', 2: 'Master-Y', 3: 'Master-Z', 4: 'Slave-X', 5: 'Slave-Y', 6: 'Slave-Z'},
-        inplace=True)

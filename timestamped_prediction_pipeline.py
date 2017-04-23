@@ -6,8 +6,7 @@ import pandas as pd
 import TRAINING_VARIABLES
 
 from time import time
-from raw_data_conversion.conversion import synchronize_sensors, \
-    set_header_names_for_data_generated_by_omconvert_script
+from raw_data_conversion.conversion import synchronize_sensors
 from tools.pandas_helpers import write_selected_columns_to_file, average_columns_and_write_to_file
 from predicting import predict
 from scipy import signal
@@ -62,12 +61,11 @@ def predict_with_timestamps_for_subject(subject_id, residing_folder, master_cwa=
         print("Reading synced CSV")
         synced = synchronize_sensors([master_cwa, slave_cwa], synced_csv, clean_up=remove_auxiliary_files,
                                      sync_fix=True)
-        set_header_names_for_data_generated_by_omconvert_script(synced)
 
         print("Writing sensor readings and time stamps to files")
-        master_columns = ["Master-X", "Master-Y", "Master-Z"]
-        slave_columns = ["Slave-X", "Slave-Y", "Slave-Z"]
-        time_columns = ["Time"]
+        master_columns = [1, 2, 3]
+        slave_columns = [4, 5, 6]
+        time_columns = [0]
 
         sensor_keep_rate = 1  # Keep every sample
         time_stamp_keep_rate = 100  # Keep only each 100th time stamp, because only 1 second windows will be labeled
