@@ -133,12 +133,12 @@ def get_and_make_subdirectories(sub_name, *dirs):
 
 
 if __name__ == "__main__":
-    for i in range(5, 6):
-        config_name = str(i) + "_sensors_nostairs"
+    for i in range(1, 5):
+        config_name = str(i) + "_sensors_affected"
         print(config_name)
         experiments = None
         config = configparser.ConfigParser()
-        config.read_file(open(os.path.join(VAGESHAR_ROOT, "configs", "no_stairs", "%s.cfg" % config_name)))
+        config.read_file(open(os.path.join(VAGESHAR_ROOT, "configs", "affected_matching", "%s.cfg" % config_name)))
 
         now = datetime.now()
         datetime_prefix = now.strftime("%Y%m%d_%H_%M")
