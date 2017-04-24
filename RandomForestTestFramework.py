@@ -47,13 +47,24 @@ label_to_number_dict = {
 number_to_label_dict = dict([(label_to_number_dict[l], l) for l in label_to_number_dict])
 
 
-def get_eligible_subjects(data_set_root, codewords, ignored=None):
-    if ignored is None:
-        ignored = []
+def neighbor_smooth_array(array):
+    for i in range(1, len(array) - 1):
+        previous_element = array[i - 1]
+        next_element = array[i + 1]
+        current_element = array[i]
+        if previous_element != current_element and previous_element == next_element:
+            array[i] = previous_element
+
+    return array
+
+
+def get_eligible_subjects(data_set_root, codewords, ignored_subjects=None):
+    if ignored_subjects is None:
+        ignored_subjects = []
     actual_subjects = []
 
     for r, _, files in os.walk(data_set_root):
-        if os.path.split(r)[1] in ignored:
+        if os.path.split(r)[1] in ignored_subjects:
             continue
         codeword_list = []
         for f in files:
@@ -113,12 +124,12 @@ def get_and_make_subdirectories(sub_name, *dirs):
 
 
 if __name__ == "__main__":
-    for i in range(5, 6):
-        config_name = str(i) + "_sensors_nostairs"
+    for i in range(1, 6):
+        config_name = str(i) + "_sensors_neighborsmoothing_nostairs"
         print(config_name)
         experiments = None
         config = configparser.ConfigParser()
-        config.read_file(open(os.path.join(VAGESHAR_ROOT, "configs", "no_stairs", "%s.cfg" % config_name)))
+        config.read_file(open(os.path.join(VAGESHAR_ROOT, "configs", "neighborsmoothing_nostairs", "%s.cfg" % config_name)))
 
         now = datetime.now()
         datetime_prefix = now.strftime("%Y%m%d_%H_%M")
@@ -150,6 +161,7 @@ if __name__ == "__main__":
             ADAPTATION_TEST = experiment_config.getboolean("adaptation_test")
             BEST_INDIVIDUAL_TEST = experiment_config.getboolean("best_individual_test")
             ORDINARY_RFC_TEST = experiment_config.getboolean("global_model_test")
+            NEIGHBOR_SMOOTHING = experiment_config.getboolean("neighbor_smoothing")
 
             config_train_data_sets = experiment_config.get("train_data_sets").split(", ")
             config_train_sensor_codewords = experiment_config.get("train_sensor_codewords").split("; ")
@@ -237,7 +249,8 @@ if __name__ == "__main__":
             test_sensor_dict = dict([(name, sen) for name, sen in zip(test_subject_ids, test_sensors)])
             test_label_dict = dict([(name, lab) for name, lab in zip(test_subject_ids, test_labels)])
 
-            cp = ClassifierPool(classifier_type="RandomForest", random_state=SEED, class_weight="balanced", n_estimators=N_TREES,
+            cp = ClassifierPool(classifier_type="RandomForest", random_state=SEED, class_weight="balanced",
+                                n_estimators=N_TREES,
                                 max_depth=MAX_DEPTH, n_jobs=N_JOBS)
 
             if ADAPTATION_TEST or BEST_INDIVIDUAL_TEST:
@@ -267,6 +280,9 @@ if __name__ == "__main__":
 
                     adapted = cp.mix_new_classifier_from_pool(X_train, y_train, [subject_id])
                     y_pred = adapted.predict(X_test)
+
+                    if NEIGHBOR_SMOOTHING:
+                        y_pred = neighbor_smooth_array(y_pred)
 
                     overall_y_test.append(y_test)
                     overall_y_pred.append(y_pred)
@@ -307,6 +323,9 @@ if __name__ == "__main__":
                         stratify=tmp_subject_labels)
                     best = cp.find_best_existing_classifier(X_train, y_train, [subject_id])
                     y_pred = best.predict(X_test)
+
+                    if NEIGHBOR_SMOOTHING:
+                        y_pred = neighbor_smooth_array(y_pred)
 
                     overall_y_test.append(y_test)
                     overall_y_pred.append(y_pred)
@@ -351,6 +370,9 @@ if __name__ == "__main__":
                     y_test = test_label_dict[subject_id]
 
                     y_pred = my_forest.predict(X_test)
+
+                    if NEIGHBOR_SMOOTHING:
+                        y_pred = neighbor_smooth_array(y_pred)
 
                     overall_y_test.append(y_test)
                     overall_y_pred.append(y_pred)
