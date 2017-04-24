@@ -58,13 +58,13 @@ def neighbor_smooth_array(array):
     return array
 
 
-def get_eligible_subjects(data_set_root, codewords, ignored=None):
-    if ignored is None:
-        ignored = []
+def get_eligible_subjects(data_set_root, codewords, ignored_subjects=None):
+    if ignored_subjects is None:
+        ignored_subjects = []
     actual_subjects = []
 
     for r, _, files in os.walk(data_set_root):
-        if os.path.split(r)[1] in ignored:
+        if os.path.split(r)[1] in ignored_subjects:
             continue
         codeword_list = []
         for f in files:
