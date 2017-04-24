@@ -1,0 +1,11 @@
+/.vs
+/Debug
+/Release
+/*.sdf
+/*.user
+/x64
+/*.opendb
+/*.db
+/flac.exe
+/metaflac.exe
+/timesync

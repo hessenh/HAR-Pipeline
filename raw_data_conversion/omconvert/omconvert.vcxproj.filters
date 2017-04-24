@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="predict.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="omdata.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="omconvert.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Wav.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="omcalibrate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="linearregression.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="calc-csv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="calc-paee.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="calc-svm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="calc-wtv.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="calc-sleep.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="butter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="omdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="omconvert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Wav.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="omcalibrate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="linearregression.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="calc-csv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="calc-paee.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="calc-svm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="calc-wtv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="calc-sleep.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="butter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mmap-win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
