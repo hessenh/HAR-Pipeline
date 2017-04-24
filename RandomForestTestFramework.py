@@ -62,8 +62,8 @@ def get_eligible_subjects(data_set_root, codeword_list, ignored_subjects=None):
     if ignored_subjects is None:
         ignored_subjects = []
 
-    all_subjects_sensor_paths = []
-    all_subjects_label_paths = []
+    all_subjects_sensor_paths = dict()
+    all_subjects_label_paths = dict()
 
     for root, _, files in os.walk(data_set_root):
         s_id = os.path.split(root)[1]
@@ -86,8 +86,8 @@ def get_eligible_subjects(data_set_root, codeword_list, ignored_subjects=None):
                 break
 
         if found_all_ks:
-            all_subjects_sensor_paths.append(this_subjects_sensor_paths)
-            all_subjects_label_paths.append(os.path.join(root, s_id + "_labels.csv"))
+            all_subjects_sensor_paths[s_id] = this_subjects_sensor_paths
+            all_subjects_label_paths[s_id] = os.path.join(root, s_id + "_labels.csv")
 
     return all_subjects_sensor_paths, all_subjects_label_paths
 
@@ -196,68 +196,61 @@ if __name__ == "__main__":
             all_sensor_data = []
             all_label_data = []
 
-            train_sensor_paths, train_label_paths = [], []
-            test_sensor_paths, test_label_paths = [], []
+            train_sensor_paths, train_label_paths = dict(), dict()
+            test_sensor_paths, test_label_paths = dict(), dict()
 
             for s, c in zip(config_train_data_sets, config_train_sensor_codewords):
                 temp_sensor_paths, temp_label_paths = get_eligible_subjects(
                     data_set_root=os.path.join(PROJECT_ROOT, "DATA", s),
                     codeword_list=c
                 )
-                train_sensor_paths += temp_sensor_paths
-                train_label_paths += temp_label_paths
+                train_sensor_paths.update(temp_sensor_paths)
+                train_label_paths.update(temp_label_paths)
 
             for s, c in zip(config_test_data_sets, config_test_sensor_codewords):
                 temp_sensor_paths, temp_label_paths = get_eligible_subjects(
                     data_set_root=os.path.join(PROJECT_ROOT, "DATA", s),
                     codeword_list=c
                 )
-                test_sensor_paths += temp_sensor_paths
-                test_label_paths += temp_label_paths
+                test_sensor_paths.update(temp_sensor_paths)
+                test_label_paths.update(temp_label_paths)
 
-            # TODO: Almost sorted these, which was not a smart idea. They are zipped later. Refactor so that the mapping between files and subject ID is not just implicit, but explicit. Could be done with dicts.
-            train_subject_ids = [os.path.dirname(l)[-3:] for l in train_label_paths]
-            test_subject_ids = [os.path.dirname(l)[-3:] for l in test_label_paths]
+            train_subject_ids = sorted(train_label_paths.keys())
+            test_subject_ids = sorted(test_label_paths.keys())
 
             print("Loading training set")
             train_sensors = Parallel(n_jobs=N_JOBS)(
-                delayed(load_sensors)(s, train_data_loader) for s in train_sensor_paths)
+                delayed(load_sensors)(train_sensor_paths[s_id], train_data_loader) for s_id in train_subject_ids)
             train_labels = Parallel(n_jobs=N_JOBS)(
-                delayed(load_labels)(s, train_data_loader) for s in train_label_paths)
+                delayed(load_labels)(train_label_paths[s_id], train_data_loader) for s_id in train_subject_ids)
 
             print("Loading test set")
             test_sensors = Parallel(n_jobs=N_JOBS)(
-                delayed(load_sensors)(s, test_data_loader) for s in test_sensor_paths)
-            test_labels = Parallel(n_jobs=N_JOBS)(delayed(load_labels)(s, test_data_loader) for s in test_label_paths)
+                delayed(load_sensors)(test_sensor_paths[s_id], test_data_loader) for s_id in test_subject_ids)
+            test_labels = Parallel(n_jobs=N_JOBS)(
+                delayed(load_labels)(test_label_paths[s_id], test_data_loader) for s_id in test_subject_ids)
+
+            # Turn these into dictionaries
+            train_sensor_dict = dict(
+                [(s_id, sensor_windows) for s_id, sensor_windows in zip(train_subject_ids, train_sensors)])
+            train_label_dict = dict(
+                [(s_id, label_windows) for s_id, label_windows in zip(train_subject_ids, train_labels)])
+
+            test_sensor_dict = dict(
+                [(s_id, sensor_windows) for s_id, sensor_windows in zip(test_subject_ids, test_sensors)])
+            test_label_dict = dict(
+                [(s_id, label_windows) for s_id, label_windows in zip(test_subject_ids, test_labels)])
 
             # Cleaning up
-            tmp_sensors = []
-            tmp_labels = []
+            for s_id in train_subject_ids:
+                sensors, labels = train_sensor_dict[s_id], train_label_dict[s_id]
+                train_sensor_dict[s_id], train_label_dict[s_id] = remove_unwanted_activities(sensors, labels,
+                                                                                     ACTIVITIES_TO_KEEP)
 
-            for sens, labs in zip(train_sensors, train_labels):
-                clean_sens, clean_labs = remove_unwanted_activities(sens, labs, ACTIVITIES_TO_KEEP)
-                tmp_sensors.append(clean_sens)
-                tmp_labels.append(clean_labs)
-
-            train_sensors = tmp_sensors
-            train_labels = tmp_labels
-
-            tmp_sensors = []
-            tmp_labels = []
-
-            for sens, labs in zip(test_sensors, test_labels):
-                clean_sens, clean_labs = remove_unwanted_activities(sens, labs, ACTIVITIES_TO_KEEP)
-                tmp_sensors.append(clean_sens)
-                tmp_labels.append(clean_labs)
-
-            test_sensors = tmp_sensors
-            test_labels = tmp_labels
-
-            train_sensor_dict = dict([(name, sen) for name, sen in zip(train_subject_ids, train_sensors)])
-            train_label_dict = dict([(name, lab) for name, lab in zip(train_subject_ids, train_labels)])
-
-            test_sensor_dict = dict([(name, sen) for name, sen in zip(test_subject_ids, test_sensors)])
-            test_label_dict = dict([(name, lab) for name, lab in zip(test_subject_ids, test_labels)])
+            for s_id in test_subject_ids:
+                sensors, labels = test_sensor_dict[s_id], test_label_dict[s_id]
+                test_sensor_dict[s_id], test_label_dict[s_id] = remove_unwanted_activities(sensors, labels,
+                                                                                   ACTIVITIES_TO_KEEP)
 
             cp = ClassifierPool(classifier_type="RandomForest", random_state=SEED, class_weight="balanced",
                                 n_estimators=N_TREES,
