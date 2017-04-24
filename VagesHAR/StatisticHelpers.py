@@ -49,8 +49,26 @@ def save_confusion_matrix_image(matrix, classes, normalize=False, title='Confusi
     plt.savefig(save_path)
 
 
+def specificity_score(y_true, y_pred):
+    occurring_classes = sorted(list(set(y_true)))
+
+    specificity_dict = dict()
+
+    for c in occurring_classes:
+        binary_y_true = [True if label == c else False for label in y_true]
+        binary_y_pred = [True if label == c else False for label in y_pred]
+
+        # This step is inspired by http://scikit-learn.org/stable/modules/model_evaluation.html#confusion-matrix
+        tn, fp, _, _ = confusion_matrix(binary_y_true, binary_y_pred).ravel()
+
+        specificity_dict[c] = tn / (tn + fp)
+
+    return specificity_dict
+
+
 def generate_and_save_statistics_json(y_true, y_pred, number_to_class_name_dict, save_path):
     precision, recall, f_score, support = precision_recall_fscore_support(y_true, y_pred)
+    specificity = specificity_score(y_true, y_pred)
     accuracy = accuracy_score(y_true, y_pred)
     print(os.path.split(save_path)[1], accuracy)
 
@@ -58,17 +76,19 @@ def generate_and_save_statistics_json(y_true, y_pred, number_to_class_name_dict,
 
     classes = [number_to_class_name_dict[c] for c in occurring_classes]
 
-    save_statistics_json(accuracy, classes, f_score, precision, recall, save_path, support)
+    save_statistics_json(accuracy, classes, f_score, precision, recall, save_path, support, specificity)
 
 
-def save_statistics_json(accuracy, classes, f_score, precision, recall, save_path, support):
+def save_statistics_json(accuracy, classes, f_score, precision, recall, save_path, support, specificity):
     recall_dict = dict([(c, s) for c, s in zip(classes, recall)])
     precision_dict = dict([(c, s) for c, s in zip(classes, precision)])
     f_score_dict = dict([(c, s) for c, s in zip(classes, f_score)])
     support_dict = dict([(c, s) for c, s in zip(classes, support)])
+    specificity_dict = dict([(c, s) for c, s in zip(classes, specificity)])
     d = {
         "recall": recall_dict,
         "precision": precision_dict,
+        "specificity": specificity_dict,
         "f_score": f_score_dict,
         "support": support_dict,
         "accuracy": accuracy
