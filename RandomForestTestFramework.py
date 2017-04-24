@@ -58,29 +58,38 @@ def neighbor_smooth_array(array):
     return array
 
 
-def get_eligible_subjects(data_set_root, codewords, ignored_subjects=None):
+def get_eligible_subjects(data_set_root, codeword_list, ignored_subjects=None):
     if ignored_subjects is None:
         ignored_subjects = []
-    actual_subjects = []
 
-    for r, _, files in os.walk(data_set_root):
-        if os.path.split(r)[1] in ignored_subjects:
+    all_subjects_sensor_paths = []
+    all_subjects_label_paths = []
+
+    for root, _, files in os.walk(data_set_root):
+        s_id = os.path.split(root)[1]
+        if s_id in ignored_subjects:
             continue
-        codeword_list = []
-        for f in files:
-            codeword_list.append(f[4:-4])
 
-        if set(codewords) <= set(codeword_list):
-            actual_subjects.append(r)
+        this_subjects_sensor_paths = []
 
-    subject_sensor_paths = []
-    subject_label_paths = []
-    for s_path in sorted(actual_subjects):
-        s_id = s_path[-3:]
-        subject_sensor_paths.append([os.path.join(s_path, s_id + "_" + k + ".csv") for k in codewords])
-        subject_label_paths.append(os.path.join(s_path, s_id + "_labels.csv"))
+        found_all_ks = True
 
-    return subject_sensor_paths, subject_label_paths
+        for k in codeword_list:
+            found_k = False
+            for f in files:
+                if k in f:
+                    this_subjects_sensor_paths.append(os.path.join(root, f))
+                    found_k = True
+                    break
+            if not found_k:
+                found_all_ks = False
+                break
+
+        if found_all_ks:
+            all_subjects_sensor_paths.append(this_subjects_sensor_paths)
+            all_subjects_label_paths.append(os.path.join(root, s_id + "_labels.csv"))
+
+    return all_subjects_sensor_paths, all_subjects_label_paths
 
 
 def load_sensors(csv_files, data_loader):
@@ -124,12 +133,12 @@ def get_and_make_subdirectories(sub_name, *dirs):
 
 
 if __name__ == "__main__":
-    for i in range(1, 6):
-        config_name = str(i) + "_sensors_neighborsmoothing_nostairs"
+    for i in range(5, 6):
+        config_name = str(i) + "_sensors_nostairs"
         print(config_name)
         experiments = None
         config = configparser.ConfigParser()
-        config.read_file(open(os.path.join(VAGESHAR_ROOT, "configs", "neighborsmoothing_nostairs", "%s.cfg" % config_name)))
+        config.read_file(open(os.path.join(VAGESHAR_ROOT, "configs", "no_stairs", "%s.cfg" % config_name)))
 
         now = datetime.now()
         datetime_prefix = now.strftime("%Y%m%d_%H_%M")
@@ -193,7 +202,7 @@ if __name__ == "__main__":
             for s, c in zip(config_train_data_sets, config_train_sensor_codewords):
                 temp_sensor_paths, temp_label_paths = get_eligible_subjects(
                     data_set_root=os.path.join(PROJECT_ROOT, "DATA", s),
-                    codewords=c
+                    codeword_list=c
                 )
                 train_sensor_paths += temp_sensor_paths
                 train_label_paths += temp_label_paths
@@ -201,11 +210,12 @@ if __name__ == "__main__":
             for s, c in zip(config_test_data_sets, config_test_sensor_codewords):
                 temp_sensor_paths, temp_label_paths = get_eligible_subjects(
                     data_set_root=os.path.join(PROJECT_ROOT, "DATA", s),
-                    codewords=c
+                    codeword_list=c
                 )
                 test_sensor_paths += temp_sensor_paths
                 test_label_paths += temp_label_paths
 
+            # TODO: Almost sorted these, which was not a smart idea. They are zipped later. Refactor so that the mapping between files and subject ID is not just implicit, but explicit. Could be done with dicts.
             train_subject_ids = [os.path.dirname(l)[-3:] for l in train_label_paths]
             test_subject_ids = [os.path.dirname(l)[-3:] for l in test_label_paths]
 
@@ -255,7 +265,7 @@ if __name__ == "__main__":
 
             if ADAPTATION_TEST or BEST_INDIVIDUAL_TEST:
                 print("Creating pool")
-                for subject_id in train_subject_ids:
+                for subject_id in sorted(train_subject_ids):
                     print(subject_id)
                     tmp_subject_sensors, tmp_subject_labels = train_sensor_dict[subject_id], train_label_dict[
                         subject_id]
