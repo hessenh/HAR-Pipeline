@@ -151,7 +151,7 @@ def extract(subject_id, cwas, pre_conversion_fix=True, mph=5.0, clean_up=True,
             sensor_label_sync_index=None, shifts=None, starting_drops=3, sampling_frequency=100, max_hours_to_read=48):
     max_rows = 3600 * max_hours_to_read * sampling_frequency
     subject_folder = os.path.join(SUBJECT_DATA_LOCATION, subject_id)
-    output_folder = os.path.join(subject_folder, "output")
+    output_folder = os.path.join(subject_folder, subject_id)
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     except AttributeError:
         non_existent_ids = []
 
-    for i in [10, 11, 12]:
+    for i in range(13, 17):
         if i in non_existent_ids:
             continue
 
