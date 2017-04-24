@@ -12,6 +12,8 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score, con
 matplotlib.use("Agg")  # Set non-interactive background. Must precede pyplot import.
 import matplotlib.pyplot as plt
 
+from definitions import PROJECT_ROOT
+
 
 def save_confusion_matrix_image(matrix, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.summer,
                                 save_path="./whatever.png"):
@@ -90,16 +92,22 @@ def f_score(tp, fp, fn, beta):
 
 
 def print_accuracies(statistic_folder):
-    subjects = ["overall", "S01", "S02", "S03", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12"]
+    subject_set = set()
+
+    for _, _, files in os.walk(statistic_folder):
+        this_folders_subject_names = {os.path.splitext(f)[0] for f in files}
+        subject_set |= this_folders_subject_names
+
+    subject_list = sorted(subject_set, key=lambda x: x.lower())
 
     for k in ["general_population", "adaptation", "best_individual"]:
         print()
         print(k)
-        print("\t" + "\t".join(subjects))
+        print("\t" + "\t".join(subject_list))
         for root, dirs, files in os.walk(statistic_folder):
             if k in root:
                 print(os.path.split(os.path.split(root)[0])[1], end="\t")
-                for s in subjects:
+                for s in subject_list:
                     f = os.path.join(root, s + ".json")
                     if os.path.exists(f):
                         with open(f, "r") as g:
